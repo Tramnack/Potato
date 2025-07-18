@@ -1,0 +1,27 @@
+# potato-project/docker-compose.yml
+
+services:
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: backbone
+    hostname: rabbitmq  # Important for services to find it
+    ports:
+      - "5672:5672"  # Standard AMQP port
+      - "15672:15672"  # Management port  (http://localhost:15672)
+    environment:
+      RABBITMQ_DEFAULT_USER: "guest"
+      RABBITMQ_DEFAULT_PASS: "guest" # CHANGE THIS FOR PRODUCTION! (but fine for dev)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq # Persist data (queues, messages)
+
+  template:
+    build:
+      context: ./services # <-- BUILD CONTEXT for this service
+      dockerfile: template/specific/Dockerfile                # Default, but good to be explicit
+    environment:
+      MESSAGE_BROKER_HOST: "rabbitmq"
+    depends_on:
+      - rabbitmq
+
+volumes:
+  rabbitmq_data:
