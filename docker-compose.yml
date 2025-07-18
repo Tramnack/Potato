@@ -14,12 +14,23 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq # Persist data (queues, messages)
 
+  ear:
+    build:
+      context: ./services
+      dockerfile: ear/watchdog/Dockerfile
+    environment:
+      RABBITMQ_HOST: "rabbitmq"
+      RABBITMQ_PORT: 5672
+    depends_on:
+      - rabbitmq
+
   template:
     build:
       context: ./services # <-- BUILD CONTEXT for this service
       dockerfile: template/specific/Dockerfile                # Default, but good to be explicit
     environment:
-      MESSAGE_BROKER_HOST: "rabbitmq"
+      RABBITMQ_HOST: "rabbitmq"
+      RABBITMQ_PORT: 5672
     depends_on:
       - rabbitmq
 
