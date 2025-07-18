@@ -26,6 +26,7 @@ COPY shared_libs /app/services/shared_libs
 
 # 5. Install Python dependencies specific to this service.
 # The requirements.txt file was copied with the service's own files in step 2.
+RUN pip install --no-cache-dir -r /app/services/shared_libs/requirements.txt
 RUN pip install --no-cache-dir -r /app/services/template/specific/requirements.txt
 
 # 6. Set PYTHONPATH so Python can find the 'services' package from the root of '/app'.

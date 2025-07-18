@@ -1,2 +1,5 @@
 # Potato
 🥔
+
+# TODO:
+- [ ] Project Logging
