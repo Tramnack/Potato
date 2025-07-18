@@ -24,6 +24,16 @@ services:
     depends_on:
       - rabbitmq
 
+  brain:
+    build:
+      context: ./services
+      dockerfile: brain/echo/Dockerfile
+    environment:
+      RABBITMQ_HOST: "rabbitmq"
+      RABBITMQ_PORT: 5672
+    depends_on:
+      - rabbitmq
+
   template:
     build:
       context: ./services # <-- BUILD CONTEXT for this service
