@@ -34,15 +34,5 @@ services:
     depends_on:
       - rabbitmq
 
-  template:
-    build:
-      context: ./services # <-- BUILD CONTEXT for this service
-      dockerfile: template/specific/Dockerfile                # Default, but good to be explicit
-    environment:
-      RABBITMQ_HOST: "rabbitmq"
-      RABBITMQ_PORT: 5672
-    depends_on:
-      - rabbitmq
-
 volumes:
   rabbitmq_data:
