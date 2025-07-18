@@ -12,4 +12,3 @@ This Service serves as a Template/ Example of how to create a new Service.
 5. Delete `Dockerfile`
 6. Create a new `Service` file: `New > Service` (Dockerfile)
 7. Add the new service to `docker-compose.yml`
-8. Update `.env`?
