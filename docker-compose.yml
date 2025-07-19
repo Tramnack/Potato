@@ -1,9 +1,11 @@
 # potato-project/docker-compose.yml
 
+name: Potato
+
 services:
   rabbitmq:
     image: rabbitmq:4-management-alpine
-    container_name: backbone
+    container_name: ${COMPOSE_PROJECT_NAME}_Backbone
     hostname: rabbitmq  # Important for services to find it
     ports:
       - "5672:5672"  # Standard AMQP port
@@ -18,9 +20,9 @@ services:
     build:
       context: ./services
       dockerfile: ear/watchdog/Dockerfile
-    environment:
-      RABBITMQ_HOST: "rabbitmq"
-      RABBITMQ_PORT: 5672
+    container_name: ${COMPOSE_PROJECT_NAME}_Ear
+    env_file:
+      - .env
     depends_on:
       - rabbitmq
 
@@ -28,9 +30,9 @@ services:
     build:
       context: ./services
       dockerfile: brain/echo/Dockerfile
-    environment:
-      RABBITMQ_HOST: "rabbitmq"
-      RABBITMQ_PORT: 5672
+    container_name: ${COMPOSE_PROJECT_NAME}_Brain
+    env_file:
+      - .env
     depends_on:
       - rabbitmq
 
