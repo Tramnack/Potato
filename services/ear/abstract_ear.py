@@ -1,5 +1,5 @@
 from abc import abstractmethod, ABC
 
 
-class Ear(ABC):
+class AbstractEar(ABC):
     pass

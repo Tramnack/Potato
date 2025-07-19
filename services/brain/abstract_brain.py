@@ -1,5 +1,5 @@
 from abc import abstractmethod, ABC
 
 
-class Brain(ABC):
+class AbstractBrain(ABC):
     pass

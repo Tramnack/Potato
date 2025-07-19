@@ -1,5 +1,5 @@
 from abc import abstractmethod, ABC
 
 
-class Mouth(ABC):
+class AbstractMouth(ABC):
     pass
