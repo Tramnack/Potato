@@ -1,0 +1,7 @@
+Potato Launcher
+===============
+
+.. toctree::
+   :maxdepth: 4
+
+   temp_launcher

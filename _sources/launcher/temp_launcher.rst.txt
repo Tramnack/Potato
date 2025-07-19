@@ -1,0 +1,7 @@
+temp\_launcher module
+=====================
+
+.. automodule:: temp_launcher
+   :members:
+   :show-inheritance:
+   :undoc-members:

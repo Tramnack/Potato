@@ -1,0 +1,7 @@
+temp\_service module
+====================
+
+.. automodule:: temp_service
+   :members:
+   :show-inheritance:
+   :undoc-members:
