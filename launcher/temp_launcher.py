@@ -1,5 +1,5 @@
 """
-A Temporary File for testing Sphinx Documentation
+A Temporary Launcher File for testing Sphinx Documentation
 """
 
 def main(verbose=False):
