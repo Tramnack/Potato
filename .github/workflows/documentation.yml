@@ -17,8 +17,8 @@ jobs:
       - name: Sphinx build
         run: |
           cd docs
-          sphinx-apidoc -o ./source/ ../services -f --exclude-patterns '*__init__.py'
-          sphinx-apidoc -o ./source/ ../launcher -f --exclude-patterns '*__init__.py' 
+          sphinx-apidoc -o ./source ../services -f
+          sphinx-apidoc -o ./source ../launcher -f
           make html
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
