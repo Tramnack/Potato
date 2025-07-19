@@ -7,9 +7,6 @@ from pika.spec import Basic
 
 from services.brain.abstract_brain import AbstractBrain
 
-RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'localhost')
-RABBITMQ_PORT = int(os.getenv('RABBITMQ_PORT', 5672))
-
 
 class EchoBrain(AbstractBrain):
     def setup(self):
@@ -27,6 +24,9 @@ class EchoBrain(AbstractBrain):
 
 
 def main():
+    RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'localhost')
+    RABBITMQ_PORT = int(os.getenv('RABBITMQ_PORT', 5672))
+
     consumer = EchoBrain(RABBITMQ_HOST, RABBITMQ_PORT)
     print(' [*] Brain waiting for messages. To exit press CTRL+C')
     consumer.consume('ear_to_brain', auto_ack=False)

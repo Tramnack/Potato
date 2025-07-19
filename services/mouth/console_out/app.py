@@ -1,4 +1,5 @@
 import os
+import sys
 
 from pika import BasicProperties
 from pika.channel import Channel
@@ -27,4 +28,11 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print('Interrupted')
+        try:
+            sys.exit(0)
+        except SystemExit:
+            exit(0)
