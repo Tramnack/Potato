@@ -36,5 +36,15 @@ services:
     depends_on:
       - rabbitmq
 
+  mouth:
+    build:
+      context: ./services
+      dockerfile: mouth/console_out/Dockerfile
+    container_name: ${COMPOSE_PROJECT_NAME}_Mouth
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+
 volumes:
   rabbitmq_data:
