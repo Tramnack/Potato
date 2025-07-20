@@ -9,9 +9,6 @@ from services.shared_libs import HealthCheckMixin
 from services.shared_libs.RabbitMQ.const import RMQ_HOST, RMQ_PORT
 
 
-# TODO: Replace print with logger
-
-
 class AbstractRabbitMQ(HealthCheckMixin, ABC):
     def __init__(self,
                  host: str = RMQ_HOST,
@@ -60,17 +57,17 @@ class AbstractRabbitMQ(HealthCheckMixin, ABC):
         interval = self._attempt_interval
 
         # Establish connection with RabbitMQ server
-        print(f"Attempting to connect to RabbitMQ at {host}:{port}")
+        self.logger.info(f"Attempting to connect to RabbitMQ at {host}:{port}")
         for attempt_nr in range(max_attempts):
             try:
                 connection = pika.BlockingConnection(pika.ConnectionParameters(host=host, port=port))
-                print("Connected to RabbitMQ successfully")
+                self.logger.info("Connected to RabbitMQ successfully")
                 break  # Exit loop if connection is successful
             except AMQPConnectionError:
-                print(f"Failed to connect to RabbitMQ. Retrying in {interval} seconds...")
+                self.logger.warning(f"Failed to connect to RabbitMQ. Retrying in {interval} seconds...")
                 time.sleep(interval)
         else:
-            print(f"Failed to connect to RabbitMQ after {max_attempts} attempts."
+            self.logger.error(f"Failed to connect to RabbitMQ after {max_attempts} attempts."
                   f"Tried for {max_attempts * interval} seconds.")
             raise Exception(f"Failed to connect to RabbitMQ after {max_attempts} attempts.")
         return connection.channel()
@@ -81,10 +78,10 @@ class AbstractRabbitMQ(HealthCheckMixin, ABC):
 
     def __del__(self):
         if self._channel.is_closed:
-            print("Channel already closed.")
+            self.logger.debug("Channel already closed.")
         else:
             self._channel.close()
-        print("Channel closed.")
+        self.logger.info("Channel closed.")
 
     @abstractmethod
     def setup(self):

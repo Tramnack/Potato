@@ -4,6 +4,8 @@ from typing import Any, Optional
 
 from flask import Flask
 
+from services.shared_libs.logging_config import setup_logging
+
 
 class HealthCheckMixin:
     """
@@ -31,11 +33,14 @@ class HealthCheckMixin:
         self._is_ready = False
         self._status = None
 
+        self.logger = setup_logging(service_name=self.__class__.__name__)
+
         # If no_app was called, skip setting up the Flask app and return early.
         if health_check_port is None:
             self._health_port = None
             self._health_app = None
             self._is_ready = True
+            self.logger.info("Initialized without Health Check Server.")
             return
 
         # Ensure the health_check_port is an integer.
@@ -57,6 +62,7 @@ class HealthCheckMixin:
         self._start_health_server()
         # Record the start time for uptime calculation.
         self._start_time = time.time()
+        self.logger.info(f"Health Check Server initialized on port {self.health_check_port}")
 
     @classmethod
     def no_app(cls):
