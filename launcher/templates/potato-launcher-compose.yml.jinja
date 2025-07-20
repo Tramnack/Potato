@@ -1,0 +1,52 @@
+name: Potato
+
+services:
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: ${COMPOSE_PROJECT_NAME}_Backbone
+    hostname: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RMQ_DEFAULT_USER="guest"
+      - RMQ_DEFAULT_PASS="guest"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+{% for impl in implementations.values() %}
+  {{ impl.docker_service_name }}:
+  image: {{ impl.image }}
+  container_name: {{ impl.container_name or "${COMPOSE_PROJECT_NAME}_" ~ impl.service }}
+  env_file:
+    - .env
+  depends_on:
+    - rabbitmq
+        {%- for dep in impl.depends_on %}
+    - {{ dep }}
+        {%- endfor %}
+      {%- if impl.ports %}
+  ports:
+        {%- for port in impl.ports %}
+    - "{{ port  }}"
+        {%- endfor %}
+      {%- endif %}
+      {%- if impl.environment %}
+  environment:
+        {%- for key, value in impl.environment.items() %}
+    - {{ key }}={{ value }}
+        {%- endfor %}
+      {%- endif %}
+      {%- if impl.volumes %}
+  volumes:
+        {%- for volume in impl.volumes %}
+    - "{{ volume }}:{{ volume }}"
+        {%- endfor %}
+      {%- endif %}
+{% endfor %}
+
+volumes:
+  rabbitmq_data:
+  {%- for volume_name in all_volumes %}
+  {{ volume_name }}:
+  {%- endfor %}

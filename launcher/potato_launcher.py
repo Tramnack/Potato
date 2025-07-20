@@ -23,64 +23,7 @@ CONFIG_FILE = Path("services_config.yaml")
 PRESETS_DIR = Path("Presets")
 USER_SELECTION_FILE = Path("user_selection.yaml")
 DOCKER_COMPOSE_FILE = Path("docker-compose.yml")
-
-# --- Jinja2 Template for docker-compose.yml ---
-# Using a template provides a clean separation between the data (from Python)
-# and the structure of the output file.
-DOCKER_COMPOSE_TEMPLATE = """
-name: Potato
-
-services:
-  rabbitmq:
-    image: rabbitmq:4-management-alpine
-    container_name: ${COMPOSE_PROJECT_NAME}_Backbone
-    hostname: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      - RMQ_DEFAULT_USER=guest
-      - RMQ_DEFAULT_PASS=guest
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-
-{% for impl in implementations.values() %}
-  {{ impl.docker_service_name }}:
-    image: {{ impl.image }}
-    container_name: {{ impl.container_name or "${COMPOSE_PROJECT_NAME}_" ~ impl.service }}
-    env_file:
-      - .env
-    depends_on:
-      - rabbitmq
-      {%- for dep in impl.depends_on %}
-      - {{ dep }}
-      {%- endfor %}
-    {%- if impl.ports %}
-    ports:
-      {%- for port in impl.ports %}
-      - "{{ port  }}"
-      {%- endfor %}
-    {%- endif %}
-    {%- if impl.environment %}
-    environment:
-      {%- for key, value in impl.environment.items() %}
-      - {{ key }}={{ value }}
-      {%- endfor %}
-    {%- endif %}
-    {%- if impl.volumes %}
-    volumes:
-      {%- for volume in impl.volumes %}
-      - "{{ volume }}:{{ volume }}"
-      {%- endfor %}
-    {%- endif %}
-{% endfor %}
-
-volumes:
-  rabbitmq_data:
-  {%- for volume_name in all_volumes %}
-  {{ volume_name }}:
-  {%- endfor %}
-"""
+DOCKER_COMPOSE_TEMPLATE = Path("templates/potato-launcher-compose.yml.jinja")
 
 
 # --- Data Classes for Configuration ---
@@ -175,6 +118,12 @@ def save_yaml_file(file_path: Path, data: dict):
     """A generic utility to save data to a YAML file."""
     with open(file_path, "w") as f:
         yaml.dump(data, f)
+
+
+def load_text_file(file_path: Path) -> str:
+    """A generic utility to load text data from a file."""
+    with open(file_path) as f:
+        return f.read()
 
 
 def save_text_file(file_path: Path, data: str):
@@ -337,7 +286,8 @@ def generate_docker_compose(selected_implementations: Dict[str, ImplementationCo
                 all_volumes.add(vol)
 
     # Create a Jinja2 template object
-    template = Template(DOCKER_COMPOSE_TEMPLATE)
+    template_contents = load_text_file(DOCKER_COMPOSE_TEMPLATE)
+    template = Template(template_contents)
 
     # Render the template with the prepared data
     rendered_compose = template.render(
@@ -427,9 +377,11 @@ def run_docker_compose_up() -> bool:
         print("Docker containers are starting in the background...")
         return True
     except subprocess.CalledProcessError as e:
+        print("-" * 30)
         print(f"Error running Docker Compose: {e}")
         print("Please check if Docker is running and the configuration is valid.")
     except FileNotFoundError:
+        print("-" * 30)
         print("Error: 'docker' command not found. Is Docker installed and in your PATH?")
     return False
 
