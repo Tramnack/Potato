@@ -1,7 +1,5 @@
-from abc import abstractmethod, ABC
+from abc import ABC
 
 
 class Template(ABC):
-    @abstractmethod
-    def run(self):
-        pass
+    pass
