@@ -22,6 +22,8 @@ services:
       dockerfile: ear/heartbeat/Dockerfile
     image: ear/heartbeat-ear
     container_name: ${COMPOSE_PROJECT_NAME}_Ear
+    ports:
+      - "8000:5000"
     env_file:
       - .env
     depends_on:
@@ -33,6 +35,8 @@ services:
       dockerfile: brain/echo/Dockerfile
     image: brain/echo-brain
     container_name: ${COMPOSE_PROJECT_NAME}_Brain
+    ports:
+      - "8001:5000"
     env_file:
       - .env
     depends_on:
@@ -44,6 +48,8 @@ services:
       dockerfile: mouth/console_out/Dockerfile
     image: mouth/console-out-mouth
     container_name: ${COMPOSE_PROJECT_NAME}_Mouth
+    ports:
+      - "8002:5000"
     env_file:
       - .env
     depends_on:

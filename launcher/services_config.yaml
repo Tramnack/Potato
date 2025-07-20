@@ -7,7 +7,7 @@ ear_implementations:
       description: "Continuously sends a message to a RabbitMQ queue."
       image: "ear/heartbeat-ear:latest" # Or specify build: ./services/ear/mic
       ports:
-        - 8000:8000
+        - 8000:5000
       health_check:
         port: 8000
         path: "/health"
@@ -29,7 +29,7 @@ brain_implementations:
       description: "Echoes the text it receives."
       image: "brain/echo-brain:latest"
       ports:
-        - 8001:8000
+        - 8001:5000
       health_check:
         port: 8001
         path: "/health"
@@ -45,7 +45,7 @@ mouth_implementations:
       description: "Prints text to the console."
       image: "mouth/console-out-mouth:latest"
       ports:
-        - 8002:8000
+        - 8002:5000
       health_check:
         port: 8002
         path: "/health"

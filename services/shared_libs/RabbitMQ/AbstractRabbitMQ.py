@@ -18,7 +18,7 @@ class AbstractRabbitMQ(HealthCheckMixin, ABC):
                  port: int = RMQ_PORT,
                  max_attempts: int = 5,
                  attempt_interval: float = 5.0,
-                 health_check_port=8000):
+                 health_check_port=5000):
         """
         :param host: The hostname or IP address of the RabbitMQ server.
         :param port: The port number on which the RabbitMQ server is listening.
