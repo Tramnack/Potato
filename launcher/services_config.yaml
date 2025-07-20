@@ -1,0 +1,41 @@
+ear_implementations:
+  name: "Ear"
+  description: "Listens."
+  implementations:
+    - name: "Heartbeat"
+      docker_service_name: "heartbeat-ear"
+      description: "Continuously sends a message to a RabbitMQ queue."
+      image: "ear/heartbeat-ear:latest" # Or specify build: ./services/ear/mic
+      ports:
+        - 8001:8000
+      health_check:
+        port: 8001
+        path: "/health"
+        interval: 5 # seconds
+        attempts: 10
+      # environment:
+      #   AUDIO_DEVICE_ID: "default" # Example config
+      # volumes:
+      #   - /etc/asound.conf:/etc/asound.conf:ro # Example for ALSA config
+      # depends_on:
+      #   - brain  # Example
+
+brain_implementations:
+  name: "Brain"
+  description: "Thinks."
+  implementations:
+    - name: "Echo"
+      docker_service_name: "echo-brain"
+      description: "Echoes the text it receives."
+      image: "brain/echo-brain:latest"
+
+mouth_implementations:
+  name: "Mouth"
+  description: "Speaks."
+  implementations:
+    - name: "Console Out"
+      docker_service_name: "console-out-mouth"
+      description: "Prints text to the console."
+      image: "mouth/console-out-mouth:latest"
+
+# More Services
