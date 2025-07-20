@@ -63,7 +63,7 @@ class HealthCheckMixin:
             return {
                 "status": self._status,
                 "ready": self._is_ready,
-                "uptime_seconds": uptime
+                "uptime_seconds": round(uptime, 2)
             }, 200 if self._is_ready else 503
 
     def _start_health_server(self):

@@ -21,7 +21,7 @@ services:
       context: ./services
       dockerfile: ear/heartbeat/Dockerfile
     image: ear/heartbeat-ear
-    container_name: ${COMPOSE_PROJECT_NAME}-Ear
+    container_name: ${COMPOSE_PROJECT_NAME}_Ear
     env_file:
       - .env
     depends_on:
@@ -32,7 +32,7 @@ services:
       context: ./services
       dockerfile: brain/echo/Dockerfile
     image: brain/echo-brain
-    container_name: ${COMPOSE_PROJECT_NAME}-Brain
+    container_name: ${COMPOSE_PROJECT_NAME}_Brain
     env_file:
       - .env
     depends_on:
@@ -43,7 +43,7 @@ services:
       context: ./services
       dockerfile: mouth/console_out/Dockerfile
     image: mouth/console-out-mouth
-    container_name: ${COMPOSE_PROJECT_NAME}-Mouth
+    container_name: ${COMPOSE_PROJECT_NAME}_Mouth
     env_file:
       - .env
     depends_on:

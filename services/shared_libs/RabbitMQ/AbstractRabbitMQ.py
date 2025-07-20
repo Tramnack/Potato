@@ -9,7 +9,7 @@ from services.shared_libs import HealthCheckMixin
 from services.shared_libs.RabbitMQ.const import RMQ_HOST, RMQ_PORT
 
 
-#TODO: Replace print with logger
+# TODO: Replace print with logger
 
 
 class AbstractRabbitMQ(HealthCheckMixin, ABC):
@@ -41,7 +41,7 @@ class AbstractRabbitMQ(HealthCheckMixin, ABC):
             raise ValueError("attempt_interval must be a positive float.")
         self._attempt_interval = attempt_interval
 
-        HealthCheckMixin().__init__(health_check_port)
+        super().__init__(health_check_port)
 
         self._channel = self._connect()
         self.setup()

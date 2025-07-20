@@ -28,7 +28,6 @@ DOCKER_COMPOSE_FILE = Path("docker-compose.yml")
 # Using a template provides a clean separation between the data (from Python)
 # and the structure of the output file.
 DOCKER_COMPOSE_TEMPLATE = """
-version: "3.8"
 name: Potato
 
 services:
@@ -48,7 +47,7 @@ services:
 {% for impl in implementations.values() %}
   {{ impl.docker_service_name }}:
     image: {{ impl.image }}
-    container_name: {{ impl.container_name or "${COMPOSE_PROJECT_NAME}_" ~ impl.docker_service_name }}
+    container_name: {{ impl.container_name or "${COMPOSE_PROJECT_NAME}_" ~ impl.service }}
     env_file:
       - .env
     depends_on:
@@ -422,8 +421,10 @@ def run_docker_compose_up() -> bool:
         "up", "--build", "-d"
     ]
     try:
+        print("-" * 30)
         subprocess.run(command, check=True)
-        print("Docker containers are starting in the background.")
+        print("-" * 30)
+        print("Docker containers are starting in the background...")
         return True
     except subprocess.CalledProcessError as e:
         print(f"Error running Docker Compose: {e}")
@@ -487,10 +488,9 @@ def main():
         print("No implementations selected. Exiting.")
         return
 
-    print("\n--- Selected Implementations ---")
+    print("--- Selected Implementations ---")
     for service, impl in selected_implementations.items():
         print(f"- {service}: {impl.name} ({impl.description})")
-    print("----------------------------\n")
 
     # 3. Generate the docker-compose.yml file
     generate_docker_compose(selected_implementations)
