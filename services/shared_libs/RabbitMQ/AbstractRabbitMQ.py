@@ -5,15 +5,20 @@ import pika
 from pika.adapters.blocking_connection import BlockingChannel
 from pika.exceptions import AMQPConnectionError
 
+from services.shared_libs import HealthCheckMixin
 from services.shared_libs.RabbitMQ.const import RMQ_HOST, RMQ_PORT
 
 
 #TODO: Replace print with logger
 
 
-class AbstractRabbitMQ(ABC):
-    def __init__(self, host: str = RMQ_HOST, port: int = RMQ_PORT, max_attempts: int = 5,
-                 attempt_interval: float = 5.0):
+class AbstractRabbitMQ(HealthCheckMixin, ABC):
+    def __init__(self,
+                 host: str = RMQ_HOST,
+                 port: int = RMQ_PORT,
+                 max_attempts: int = 5,
+                 attempt_interval: float = 5.0,
+                 health_check_port=8000):
         """
         :param host: The hostname or IP address of the RabbitMQ server.
         :param port: The port number on which the RabbitMQ server is listening.
@@ -36,8 +41,12 @@ class AbstractRabbitMQ(ABC):
             raise ValueError("attempt_interval must be a positive float.")
         self._attempt_interval = attempt_interval
 
+        HealthCheckMixin().__init__(health_check_port)
+
         self._channel = self._connect()
         self.setup()
+
+        self.ready = True  # For HealthCheck
 
     def _connect(self) -> BlockingChannel:
         """
