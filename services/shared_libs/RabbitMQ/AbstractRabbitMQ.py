@@ -37,8 +37,8 @@ class AbstractRabbitMQ(HealthCheckMixin, ABC):
             raise ValueError("max_retries must be a positive integer.")
         self._max_attempts = max_attempts
 
-        if not isinstance(attempt_interval, float) or attempt_interval <= 0:
-            raise ValueError("attempt_interval must be a positive float.")
+        if not isinstance(attempt_interval, float | int) or attempt_interval <= 0:
+            raise ValueError(f"attempt_interval must be a positive float, was {attempt_interval}.")
         self._attempt_interval = attempt_interval
 
         super().__init__(health_check_port)
@@ -70,9 +70,9 @@ class AbstractRabbitMQ(HealthCheckMixin, ABC):
                 print(f"Failed to connect to RabbitMQ. Retrying in {interval} seconds...")
                 time.sleep(interval)
         else:
-            print(f"Failed to connect to RabbitMQ after {interval} attempts."
+            print(f"Failed to connect to RabbitMQ after {max_attempts} attempts."
                   f"Tried for {max_attempts * interval} seconds.")
-            raise Exception(f"Failed to connect to RabbitMQ after {interval} attempts.")
+            raise Exception(f"Failed to connect to RabbitMQ after {max_attempts} attempts.")
         return connection.channel()
 
     @property
