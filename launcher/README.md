@@ -1,7 +1,9 @@
-Develop `potato_launcher.py`:
+# Potato Launcher 🚀
 
-Implement the logic: load config, prompt user, save selection, generate (or heavily modify) a `docker-compose.yml` file,
-and then call `docker compose up`.
+A project for orchestrating a "spinup system" for development and personalized usage.
 
-The `services_config.yaml` will store the paths to the `Dockerfiles` (e.g., `build: ./services/ear/mic-input`) and other
-specific configurations for each service variant.
+## Features:
+
+- **User-Friendly:** Simple command-line interface for service selection.
+- **Docker Compose:** Generates a Docker Compose file for service orchestration.
+- **Health Checks:** Performs health checks on selected services.
