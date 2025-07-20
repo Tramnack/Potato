@@ -19,10 +19,10 @@ class ConsoleOutMouth(AbstractMouth):
 
 
 def main():
-    RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'localhost')
-    RABBITMQ_PORT = int(os.getenv('RABBITMQ_PORT', 5672))
+    RMQ_HOST = os.getenv('RMQ_HOST', 'localhost')
+    RMQ_PORT = int(os.getenv('RMQ_PORT', 5672))
 
-    consumer = ConsoleOutMouth(RABBITMQ_HOST, RABBITMQ_PORT)
+    consumer = ConsoleOutMouth(RMQ_HOST, RMQ_PORT)
     print(' [*] Mouth waiting for messages. To exit press CTRL+C')
     consumer.consume('brain_to_mouth', auto_ack=False)
 

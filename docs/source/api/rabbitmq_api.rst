@@ -13,7 +13,7 @@ General Principles
 
 Message Broker Overview
 -----------------------
-The central message broker is RabbitMQ. Services connect using the `RABBITMQ_HOST` and `RABBITMQ_PORT` environment variables.
+The central message broker is RabbitMQ. Services connect using the `RMQ_HOST` and `RMQ_PORT` environment variables.
 
 Flow 1: Ear to Brain
 --------------------

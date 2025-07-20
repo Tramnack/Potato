@@ -1,19 +1,20 @@
+import logging
 import os
 import time
 from abc import ABC, abstractmethod
 
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
-from pika.exceptions import AMQPConnectionError, ChannelClosed
+from pika.exceptions import AMQPConnectionError
 
 #TODO: Replace print with logger
 
-RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'localhost')
-RABBITMQ_PORT = int(os.getenv('RABBITMQ_PORT', 5672))  # Also good to make port dynamic
+RMQ_HOST = os.getenv('RMQ_HOST', 'localhost')
+RMQ_PORT = int(os.getenv('RMQ_PORT', 5672))  # Also good to make port dynamic
 
 
 class AbstractRabbitMQ(ABC):
-    def __init__(self, host: str = RABBITMQ_HOST, port: int = RABBITMQ_PORT, max_attempts: int = 5,
+    def __init__(self, host: str = RMQ_HOST, port: int = RMQ_PORT, max_attempts: int = 5,
                  attempt_interval: float = 5.0):
         """
         :param host: The hostname or IP address of the RabbitMQ server.
@@ -73,8 +74,8 @@ class AbstractRabbitMQ(ABC):
     def __del__(self):
         if self._channel.is_closed:
             print("Channel already closed.")
-            return
-        self._channel.close()
+        else:
+            self._channel.close()
         print("Channel closed.")
 
     @abstractmethod

@@ -11,8 +11,8 @@ services:
       - "5672:5672"  # Standard AMQP port
       - "15672:15672"  # Management port  (http://localhost:15672)
     environment:
-      RABBITMQ_DEFAULT_USER: "guest"
-      RABBITMQ_DEFAULT_PASS: "guest" # CHANGE THIS FOR PRODUCTION! (but fine for dev)
+      RMQ_DEFAULT_USER: "guest"
+      RMQ_DEFAULT_PASS: "guest" # CHANGE THIS FOR PRODUCTION! (but fine for dev)
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq # Persist data (queues, messages)
 
@@ -20,7 +20,8 @@ services:
     build:
       context: ./services
       dockerfile: ear/heartbeat/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME}_Ear
+    image: ear/heartbeat-ear
+    container_name: ${COMPOSE_PROJECT_NAME}-Ear
     env_file:
       - .env
     depends_on:
@@ -30,7 +31,8 @@ services:
     build:
       context: ./services
       dockerfile: brain/echo/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME}_Brain
+    image: brain/echo-brain
+    container_name: ${COMPOSE_PROJECT_NAME}-Brain
     env_file:
       - .env
     depends_on:
@@ -40,7 +42,8 @@ services:
     build:
       context: ./services
       dockerfile: mouth/console_out/Dockerfile
-    container_name: ${COMPOSE_PROJECT_NAME}_Mouth
+    image: mouth/console-out-mouth
+    container_name: ${COMPOSE_PROJECT_NAME}-Mouth
     env_file:
       - .env
     depends_on:

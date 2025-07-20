@@ -23,10 +23,10 @@ class HeartbeatEar(AbstractEar):
             pass
 
 def main():
-    RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'localhost')
-    RABBITMQ_PORT = int(os.getenv('RABBITMQ_PORT', 5672))  # Also good to make port dynamic
+    RMQ_HOST = os.getenv('RMQ_HOST', 'localhost')
+    RMQ_PORT = int(os.getenv('RMQ_PORT', 5672))  # Also good to make port dynamic
 
-    producer = HeartbeatEar(RABBITMQ_HOST, RABBITMQ_PORT)
+    producer = HeartbeatEar(RMQ_HOST, RMQ_PORT)
     producer.start_listening()
 
 
