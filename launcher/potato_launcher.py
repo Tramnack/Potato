@@ -8,15 +8,15 @@ a docker-compose.yml file, starts the services, and performs health checks.
 """
 
 import subprocess
-import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Dict, List, Any
 
 import inquirer
-import requests
 import yaml
 from jinja2 import Template
+
+from health_check.health_check import check_urls_in_parallel
 
 # --- Constants ---
 CONFIG_FILE = Path("services_config.yaml")
@@ -438,45 +438,23 @@ def perform_health_checks(selected_implementations: Dict[str, ImplementationConf
     """
     Performs HTTP health checks for services that have them configured.
     """
-    print("\n--- Performing Health Checks ---")
-    all_healthy = True
-    for impl in selected_implementations.values():
-        if not impl.health_check:
-            continue
+    results = check_urls_in_parallel(selected_implementations)
 
-        check_config = impl.health_check
-        url = f"http://localhost:{check_config.port}{check_config.path}"
-        print(f"Checking '{impl.docker_service_name}' at {url}")
-        print(f"Beginning ckeck in {check_config.interval} seconds...")
-
-        is_healthy = False
-        for attempt in range(check_config.attempts):
-            time.sleep(check_config.interval)
-            try:
-                response = requests.get(url, timeout=2)
-                if response.status_code == 200:
-                    print(f"  -> Success: '{impl.docker_service_name}' is healthy!")
-                    is_healthy = True
-                    break
-                else:
-                    print(f"  -> Attempt {attempt + 1}/{check_config.attempts}: Received status {response.status_code}")
-            except requests.exceptions.RequestException as e:
-                print(f"  -> Attempt {attempt + 1}/{check_config.attempts}: Connection failed. Retrying...")
-
-        if not is_healthy:
-            print(f"  -> Error: '{impl.docker_service_name}' failed all health checks.")
-            all_healthy = False
-
-    print("--- Health Checks Complete ---")
-    if not all_healthy:
-        print("Warning: One or more services failed their health checks.")
+    print("\n--- Health Checks Complete ---")
+    if all(results.values()):
+        print("✔️ All services are healthy!")
+    else:
+        print("⚠️ Some services are not healthy:")
+        for service_name, is_healthy in results.items():
+            if not is_healthy:
+                print(f"  - {service_name}")
 
 
 # --- Main Execution ---
 
 def main():
     """The main entry point for the script."""
-    print("--- Welcome to the Potato Launcher ---")
+    print("--- Welcome to the Potato Launcher 🚀 ---")
 
     # 1. Load service definitions
     services = load_services_config(CONFIG_FILE)
