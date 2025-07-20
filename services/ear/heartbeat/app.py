@@ -7,7 +7,7 @@ from services.shared_libs.RabbitMQ import RMQ_HOST, RMQ_PORT
 class HeartbeatEar(AbstractEar):
 
     def setup(self):
-        pass
+        self.ready = True  # For HealthCheck
 
     def start_listening(self):
         try:
@@ -21,6 +21,7 @@ class HeartbeatEar(AbstractEar):
                 time.sleep(1)
         except KeyboardInterrupt:
             pass
+
 
 def main():
     producer = HeartbeatEar(RMQ_HOST, RMQ_PORT)
