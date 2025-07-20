@@ -19,7 +19,7 @@ services:
   ear:
     build:
       context: ./services
-      dockerfile: ear/watchdog/Dockerfile
+      dockerfile: ear/heartbeat/Dockerfile
     container_name: ${COMPOSE_PROJECT_NAME}_Ear
     env_file:
       - .env

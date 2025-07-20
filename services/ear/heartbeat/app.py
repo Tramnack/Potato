@@ -4,7 +4,7 @@ import time
 from services.ear.abstract_ear import AbstractEar
 
 
-class WatchdogEar(AbstractEar):
+class HeartbeatEar(AbstractEar):
 
     def setup(self):
         pass
@@ -26,7 +26,7 @@ def main():
     RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'localhost')
     RABBITMQ_PORT = int(os.getenv('RABBITMQ_PORT', 5672))  # Also good to make port dynamic
 
-    producer = WatchdogEar(RABBITMQ_HOST, RABBITMQ_PORT)
+    producer = HeartbeatEar(RABBITMQ_HOST, RABBITMQ_PORT)
     producer.start_listening()
 
 
