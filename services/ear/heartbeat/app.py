@@ -1,7 +1,7 @@
-import os
 import time
 
 from services.ear.abstract_ear import AbstractEar
+from services.shared_libs.RabbitMQ import RMQ_HOST, RMQ_PORT
 
 
 class HeartbeatEar(AbstractEar):
@@ -23,9 +23,6 @@ class HeartbeatEar(AbstractEar):
             pass
 
 def main():
-    RMQ_HOST = os.getenv('RMQ_HOST', 'localhost')
-    RMQ_PORT = int(os.getenv('RMQ_PORT', 5672))  # Also good to make port dynamic
-
     producer = HeartbeatEar(RMQ_HOST, RMQ_PORT)
     producer.start_listening()
 

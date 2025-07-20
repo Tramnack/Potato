@@ -1,5 +1,3 @@
-import logging
-import os
 import time
 from abc import ABC, abstractmethod
 
@@ -7,10 +5,10 @@ import pika
 from pika.adapters.blocking_connection import BlockingChannel
 from pika.exceptions import AMQPConnectionError
 
-#TODO: Replace print with logger
+from services.shared_libs.RabbitMQ import RMQ_HOST, RMQ_PORT
 
-RMQ_HOST = os.getenv('RMQ_HOST', 'localhost')
-RMQ_PORT = int(os.getenv('RMQ_PORT', 5672))  # Also good to make port dynamic
+
+#TODO: Replace print with logger
 
 
 class AbstractRabbitMQ(ABC):
@@ -57,14 +55,15 @@ class AbstractRabbitMQ(ABC):
         for attempt_nr in range(max_attempts):
             try:
                 connection = pika.BlockingConnection(pika.ConnectionParameters(host=host, port=port))
-                print("Connected to RabbitMQ!")
+                print("Connected to RabbitMQ successfully")
                 break  # Exit loop if connection is successful
             except AMQPConnectionError:
                 print(f"Failed to connect to RabbitMQ. Retrying in {interval} seconds...")
                 time.sleep(interval)
         else:
-            raise Exception(
-                f"Failed to connect to RabbitMQ after {interval} attempts. Tried for {max_attempts * interval} seconds.")
+            print(f"Failed to connect to RabbitMQ after {interval} attempts."
+                  f"Tried for {max_attempts * interval} seconds.")
+            raise Exception(f"Failed to connect to RabbitMQ after {interval} attempts.")
         return connection.channel()
 
     @property

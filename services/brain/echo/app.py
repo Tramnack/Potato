@@ -1,4 +1,3 @@
-import os
 import sys
 
 from pika import BasicProperties
@@ -6,6 +5,7 @@ from pika.channel import Channel
 from pika.spec import Basic
 
 from services.brain.abstract_brain import AbstractBrain
+from services.shared_libs.RabbitMQ import RMQ_HOST, RMQ_PORT
 
 
 class EchoBrain(AbstractBrain):
@@ -24,8 +24,6 @@ class EchoBrain(AbstractBrain):
 
 
 def main():
-    RMQ_HOST = os.getenv('RMQ_HOST', 'localhost')
-    RMQ_PORT = int(os.getenv('RMQ_PORT', 5672))
 
     consumer = EchoBrain(RMQ_HOST, RMQ_PORT)
     print(' [*] Brain waiting for messages. To exit press CTRL+C')
