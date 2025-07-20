@@ -11,12 +11,12 @@ RUN mkdir -p /app/services/brain/echo \
            /app/services/shared_libs \
            /app/services/brain
 
-# 2. Copy the contents of THIS specific service implementation into its destination.
+# 2. Copy the contents of THIS specific service implementation (echo) into its destination.
 # `COPY .` here means "copy everything from the build context" (i.e., everything in services/brain/echo)
 # into `/app/services/brain/echo` inside the container.
 COPY brain/echo /app/services/brain/echo/
 
-# 3. Copy the abstract base class for Ear.
+# 3. Copy the abstract base class for brain.
 # It's one level up from the build context (services/brain/echo -> services/brain/)
 COPY brain/abstract_brain.py /app/services/brain/abstract_brain.py
 

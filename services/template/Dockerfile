@@ -11,18 +11,19 @@ RUN mkdir -p /app/services/template/specific \
            /app/services/shared_libs \
            /app/services/template
 
-# 2. Copy the contents of THIS specific service implementation into its destination.
+# 2. Copy the contents of THIS specific service implementation (specific) into its destination.
 # `COPY .` here means "copy everything from the build context" (i.e., everything in services/template/specific)
 # into `/app/services/template/specific` inside the container.
 COPY template/specific /app/services/template/specific/
 
-# 3. Copy the abstract base class for Ear.
+# 3. Copy the abstract base class for template.
 # It's one level up from the build context (services/template/specific -> services/template/)
 COPY template/abstract_template.py /app/services/template/abstract_template.py
 
 # 4. Copy the shared_libs.
 # It's two levels up (services/template/specific -> services/template -> services/) then into shared_libs
 COPY shared_libs /app/services/shared_libs
+COPY ../shared_libs /app/shared_libs
 
 # 5. Install Python dependencies specific to this service.
 # The requirements.txt file was copied with the service's own files in step 2.

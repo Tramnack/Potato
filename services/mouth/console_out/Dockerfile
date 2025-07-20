@@ -11,12 +11,12 @@ RUN mkdir -p /app/services/mouth/console_out \
            /app/services/shared_libs \
            /app/services/mouth
 
-# 2. Copy the contents of THIS specific service implementation into its destination.
+# 2. Copy the contents of THIS specific service implementation (console_out) into its destination.
 # `COPY .` here means "copy everything from the build context" (i.e., everything in services/mouth/console_out)
 # into `/app/services/mouth/console_out` inside the container.
 COPY mouth/console_out /app/services/mouth/console_out/
 
-# 3. Copy the abstract base class for Ear.
+# 3. Copy the abstract base class for mouth.
 # It's one level up from the build context (services/mouth/console_out -> services/mouth/)
 COPY mouth/abstract_mouth.py /app/services/mouth/abstract_mouth.py
 

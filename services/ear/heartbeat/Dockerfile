@@ -11,12 +11,12 @@ RUN mkdir -p /app/services/ear/heartbeat \
            /app/services/shared_libs \
            /app/services/ear
 
-# 2. Copy the contents of THIS specific service implementation into its destination.
+# 2. Copy the contents of THIS specific service implementation (heartbeat) into its destination.
 # `COPY .` here means "copy everything from the build context" (i.e., everything in services/ear/heartbeat)
 # into `/app/services/ear/heartbeat` inside the container.
 COPY ear/heartbeat /app/services/ear/heartbeat/
 
-# 3. Copy the abstract base class for Ear.
+# 3. Copy the abstract base class for ear.
 # It's one level up from the build context (services/ear/heartbeat -> services/ear/)
 COPY ear/abstract_ear.py /app/services/ear/abstract_ear.py
 
