@@ -16,33 +16,34 @@ services:
 
 {% for impl in implementations.values() %}
   {{ impl.docker_service_name }}:
-  image: {{ impl.image }}
-  container_name: {{ impl.container_name or "${COMPOSE_PROJECT_NAME}_" ~ impl.service }}
-  env_file:
-    - .env
-  depends_on:
-    - rabbitmq
-        {%- for dep in impl.depends_on %}
-    - {{ dep }}
-        {%- endfor %}
-      {%- if impl.ports %}
-  ports:
-        {%- for port in impl.ports %}
-    - "{{ port  }}"
-        {%- endfor %}
-      {%- endif %}
-      {%- if impl.environment %}
-  environment:
-        {%- for key, value in impl.environment.items() %}
-    - {{ key }}={{ value }}
-        {%- endfor %}
-      {%- endif %}
-      {%- if impl.volumes %}
-  volumes:
-        {%- for volume in impl.volumes %}
-    - "{{ volume }}:{{ volume }}"
-        {%- endfor %}
-      {%- endif %}
+    image: {{ impl.image }}
+    container_name: {{ impl.container_name or "${COMPOSE_PROJECT_NAME}_" ~ impl.service }}
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+          {%- for dep in impl.depends_on %}
+      - {{ dep }}
+          {%- endfor %}
+        {%- if impl.ports %}
+    ports:
+          {%- for port in impl.ports %}
+      - "{{ port  }}"
+          {%- endfor %}
+        {%- endif %}
+        {%- if impl.environment %}
+    environment:
+          {%- for key, value in impl.environment.items() %}
+      - {{ key }}={{ value }}
+          {%- endfor %}
+        {%- endif %}
+        {%- if impl.volumes %}
+      - LOG_LEVEL: INFO  # Hard-Coded in Template!
+    volumes:
+          {%- for volume in impl.volumes %}
+      - "{{ volume }}:{{ volume }}"
+          {%- endfor %}
+        {%- endif %}
 {% endfor %}
 
 volumes:
