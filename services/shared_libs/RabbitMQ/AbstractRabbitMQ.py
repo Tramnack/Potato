@@ -5,7 +5,7 @@ import pika
 from pika.adapters.blocking_connection import BlockingChannel
 from pika.exceptions import AMQPConnectionError
 
-from services.shared_libs.RabbitMQ import RMQ_HOST, RMQ_PORT
+from services.shared_libs.RabbitMQ.const import RMQ_HOST, RMQ_PORT
 
 
 #TODO: Replace print with logger

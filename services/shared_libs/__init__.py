@@ -1,3 +1,3 @@
-from HealthCheckMixin import HealthCheckMixin
+from .HealthCheckMixin import HealthCheckMixin
 
 __all__ = ["HealthCheckMixin"]
