@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import Any, Optional
+from typing import Optional
 
 from flask import Flask
 
@@ -15,14 +15,14 @@ class HealthCheckMixin:
     to monitor the readiness and status of a service.
     """
 
-    def __init__(self, health_check_port: Optional[int] = 5000):
+    def __init__(self, health_check_port: int = 5000):
         """
         Initialize the HealthCheckMixin class.
 
         Creates a health check server and starts it in a separate thread.
 
-        The ``ready`` property should be manipulated by subclasses to
-        indicate the service's readiness state.
+        The ``status`` property should be set by subclasses to
+        indicate the service's readiness state. (not Null)
 
         :param health_check_port: The port on which the health check server will listen.
                                   If set to None, the health check server will not be started.
@@ -30,28 +30,20 @@ class HealthCheckMixin:
         :raises ValueError: If `health_check_port` is not a valid integer.
         """
 
-        self._is_ready = False
-        self._status = None
-
-        self.logger = setup_logging(service_name=self.__class__.__name__)
-
-        # If no_app was called, skip setting up the Flask app and return early.
-        if health_check_port is None:
-            self._health_port = None
-            self._health_app = None
-            self._is_ready = True
-            self.logger.info("Initialized without Health Check Server.")
-            return
-
         # Ensure the health_check_port is an integer.
-        if not isinstance(health_check_port, int):
-            try:
-                health_check_port = int(health_check_port)
-            except ValueError:
-                raise ValueError("health_check_port must be an integer or a string convertible to an integer.")
+        try:
+            health_check_port = int(health_check_port)
+        except ValueError:
+            raise ValueError("health_check_port must be a valid port number.")
 
         if health_check_port <= 0:
-            raise ValueError("health_check_port must be a positive integer.")
+            raise ValueError("health_check_port must be a valid port number.")
+
+        self._ready = False
+        self._status = None
+        self._status_code = 503
+
+        self.logger = setup_logging(service_name=self.__class__.__name__)
 
         self._health_port = health_check_port
         self._health_app = Flask(__name__)
@@ -64,17 +56,6 @@ class HealthCheckMixin:
         self._start_time = time.time()
         self.logger.info(f"Health Check Server initialized on port {self.health_check_port}")
 
-    @classmethod
-    def no_app(cls):
-        """
-        Initialize the HealthCheckMixin class without a health check server.
-
-        This factory method allows creating an instance of the mixin where
-        the health check server functionality is disabled. The `ready` property
-        will default to True in this case.
-        """
-        return cls(health_check_port=None)
-
     @property
     def health_check_port(self) -> int:
         """
@@ -85,48 +66,68 @@ class HealthCheckMixin:
         return self._health_port
 
     @property
-    def ready(self):
+    def ready(self) -> bool:
         """
-        Get or set whether the service is ready.
-
-        When `True`, the service is considered ready to handle requests.
-        When `False`, the service is still initializing or in an unready state.
+        Get or set the readiness state of the service.
 
         :return: True if the service is ready, False otherwise.
         """
-        return self._is_ready
+        return self._ready
 
     @ready.setter
     def ready(self, value: bool):
         """
-        Set whether the service is ready.
+        Set the readiness state of the service.
 
-        :param value: True to mark the service as ready, False otherwise.
+        :param value: True to set the service as ready, False otherwise.
         """
         if not isinstance(value, bool):
             raise ValueError("ready must be a boolean.")
-        self._is_ready = value
+        self._ready = value
 
     @property
-    def status(self) -> Any:
+    def status(self) -> Optional[str]:
         """
         Get or set the current status message of the service.
 
         This can be used to provide more detailed information about the
         service's internal state.
 
-        :return: A string representing the service's status.
+        :return: The status message string.
         """
         return self._status
 
     @status.setter
-    def status(self, value: Any):
+    def status(self, value: str):
         """
         Set the current status message of the service.
 
         :param value: The status message string.
         """
+        if not isinstance(value, str) and value is not None:
+            self.logger.warning(f"Non-string value provided for status: {value} Converting to string.")
+            value = str(value)
         self._status = value
+
+    @property
+    def status_code(self) -> int:
+        """
+        Get or set the HTTP status code for the current status message.
+
+        :return: The HTTP status code.
+        """
+        return self._status_code or 500
+
+    @status_code.setter
+    def status_code(self, value: int):
+        """
+        Set the HTTP status code for the current status message.
+
+        :param value: The HTTP status code.
+        """
+        if not isinstance(value, int) or 0 > value or value > 599:
+            raise ValueError("status_code should be valid HTTP status code.")
+        self._status_code = value
 
     @property
     def uptime(self) -> Optional[float]:
@@ -148,6 +149,7 @@ class HealthCheckMixin:
         The '/status' endpoint provides more detailed information including
         readiness, current status message, and uptime.
         """
+
         @self._health_app.route("/health")
         def health():
             """
@@ -155,21 +157,20 @@ class HealthCheckMixin:
 
             Returns 200 OK if the service is ready, 503 Service Unavailable otherwise.
             """
-            return ("OK", 200) if self._is_ready else ("Starting...", 503)
+            return ("OK", 200) if self._ready else ("Starting...", 503)
 
         @self._health_app.route("/status")
         def status():
             """
             Status check endpoint.
 
-            Returns a JSON object with the service's status, readiness, and uptime.
-            Returns 200 OK if the service is ready, 503 Service Unavailable otherwise.
+            Returns a dictionary with readiness, status message, and uptime.
+            Returns 503 Service Unavailable if the service is not ready.
             """
             return {
                 "status": self._status,
-                "ready": self._is_ready,
                 "uptime_seconds": self.uptime
-            }, 200 if self._is_ready else 503
+            }, self._status_code if self._ready else 503
 
     def _start_health_server(self):
         """

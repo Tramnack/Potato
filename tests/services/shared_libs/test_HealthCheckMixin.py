@@ -11,30 +11,43 @@ from services.shared_libs import HealthCheckMixin
 class MyService(HealthCheckMixin):
     def __init__(self, port):
         super().__init__(health_check_port=port)
+        self._health_app.config.update({
+            "TESTING": True
+        })
+        # Simulate some initialization
+        time.sleep(0.1)
+        self.ready = True
+
+
+class MyServiceReady(HealthCheckMixin):
+    def __init__(self, port):
+        super().__init__(health_check_port=port)
+        self._health_app.config.update({
+            "TESTING": True
+        })
         # Simulate some initialization
         time.sleep(0.1)
         self.ready = True
         self.status = "operational"
+        self.status_code = 200
 
 
 class MyServiceNotReady(HealthCheckMixin):
     def __init__(self, port):
         super().__init__(health_check_port=port)
-        self.ready = False
-        self.status = "initializing"
-
-
-class MyServiceNoApp(HealthCheckMixin):
-    def __init__(self):
-        # Use the class method to initialize without an app
-        super().__init__(health_check_port=0)
+        self._health_app.config.update({
+            "TESTING": True
+        })
+        # Simulate some initialization
+        time.sleep(0.1)
+        # self.ready = False  # Keep the service not ready
 
 
 @pytest.fixture(scope="module")
 def health_service_ready():
     """Fixture to provide a ready HealthCheckMixin instance."""
     port = 5001  # Use a distinct port for this fixture
-    service = MyService(port)
+    service = MyServiceReady(port)
 
     count = 0
     # Give the server a moment to start
@@ -50,95 +63,94 @@ def health_service_ready():
 
 
 @pytest.fixture(scope="module")
-def health_service_not_ready():
+def health_service():
     """Fixture to provide a not-ready HealthCheckMixin instance."""
     port = 5002  # Use a distinct port
-    service = MyServiceNotReady(port)
+    service = MyService(port)
     time.sleep(0.5)
     yield service
 
 
 @pytest.fixture(scope="module")
-def health_service_no_app():
-    """Fixture to provide a HealthCheckMixin instance initialized with no_app."""
-    service = MyServiceNoApp()
+def health_service_not_ready():
+    """Fixture to provide a not-ready HealthCheckMixin instance."""
+    port = 5003  # Use a distinct port
+    service = MyServiceNotReady(port)
+    time.sleep(0.5)
     yield service
 
 
-def test_initialization_with_valid_port():
+@pytest.mark.parametrize("valid_port", [5000, 8000.0])
+def test_initialization_with_valid_port(valid_port):
     """Test that the mixin initializes correctly with a valid port."""
-    mixin = HealthCheckMixin(health_check_port=8000)
-    assert mixin.health_check_port == 8000
-    assert not mixin.ready  # Should be False initially
+    mixin = HealthCheckMixin(health_check_port=valid_port)
+    assert mixin.health_check_port == valid_port
+    assert not mixin.ready
     assert mixin.status is None
+    assert mixin.status_code == 503
 
 
-def test_initialization_with_invalid_port_string():
+@pytest.mark.parametrize("invalid_port", ["invalid", -1, 0, 0.5])
+def test_initialization_with_invalid_port_string(invalid_port):
     """Test that initialization raises ValueError for an invalid string port."""
-    with pytest.raises(ValueError, match="health_check_port must be an integer."):
-        HealthCheckMixin(health_check_port="invalid")
-
-
-def test_initialization_with_invalid_port_negative():
-    """Test that initialization raises ValueError for an invalid negative port."""
-    with pytest.raises(ValueError, match="health_check_port must be a positive integer."):
-        HealthCheckMixin(health_check_port=-1)
-
-
-def test_initialization_with_invalid_port_zero():
-    """Test that initialization raises ValueError for an invalid port (0)."""
-    with pytest.raises(ValueError, match="health_check_port must be a positive integer."):
-        HealthCheckMixin(health_check_port=0)
-
-
-def test_initialization_with_valid_port_float():
-    """Test that the mixin initializes correctly with a valid port."""
-    mixin = HealthCheckMixin(health_check_port=7999.0)
-    assert mixin.health_check_port == 7999
-
-
-def test_initialization_with_invalid_port_float():
-    """Test that initialization raises ValueError for an invalid float port."""
-    with pytest.raises(ValueError, match="health_check_port must be a positive integer."):
-        HealthCheckMixin(health_check_port=0.5)
-
-
-def test_no_app_initialization():
-    """Test initialization using the no_app class method."""
-    mixin = HealthCheckMixin.no_app()
-    assert mixin.health_check_port is None
-    assert mixin._health_app is None
-    assert mixin.ready is True  # Should be True when no_app is used
+    with pytest.raises(ValueError, match="health_check_port must be a valid port number"):
+        HealthCheckMixin(health_check_port=invalid_port)
 
 
 def test_ready_property():
     """Test the ready getter and setter."""
     mixin = HealthCheckMixin(health_check_port=8003)
-    assert mixin.ready is False  # Should be False initially
+    assert not mixin.ready
+    assert mixin.status is None
+    assert mixin.status_code == 503
+
     mixin.ready = True
-    assert mixin.ready is True
-    mixin.ready = False
-    assert mixin.ready is False
+    assert mixin.ready
+    assert mixin.status is None
+    assert mixin.status_code == 503
 
 
-def test_no_app_initialization_ready_property():
-    """Test initialization using the no_app class method."""
-    mixin = HealthCheckMixin.no_app()
-    assert mixin.ready is True  # Should be True when no_app is used
-    mixin.ready = False
-    assert mixin.ready is False
-    mixin.ready = True
-    assert mixin.ready is True
-
-
-def test_status_property():
+@pytest.mark.parametrize("status", ["operational", 200])
+@pytest.mark.parametrize("code", [200, 200])
+def test_status_property(status, code):
     """Test the status getter and setter."""
     mixin = HealthCheckMixin(health_check_port=8004)
+    assert not mixin.ready
     assert mixin.status is None
-    mixin.status = "initializing"
-    assert mixin.status == "initializing"
-    mixin.status = "healthy"
-    assert mixin.status == "healthy"
+    assert mixin.status_code == 503
+
+    mixin.status = status
+    mixin.status_code = code
+    assert mixin.status == str(status)
+    assert mixin.status_code == code
+
+
+def test_status_property_none():
+    """Test the status getter and setter."""
+    mixin = HealthCheckMixin(health_check_port=8004)
+    assert not mixin.ready
+    assert mixin.status is None
+    assert mixin.status_code == 503
+
+    mixin.status = "status"
+    mixin.status_code = 200
+
+    mixin.status = None
+    mixin.status_code = 204
+    assert mixin.status is None
+    assert mixin.status_code == 204
+
+
+@pytest.mark.parametrize("code", ["operational", 600, -200, None])
+def test_status_property_bad_status_code(code):
+    """Test the status getter and setter."""
+    mixin = HealthCheckMixin(health_check_port=8004)
+    assert not mixin.ready
+    assert mixin.status_code == 503
+
+    with pytest.raises(ValueError, match="status_code should be valid HTTP status code."):  # Regex
+        mixin.status_code = code
+    assert mixin.status_code == 503
 
 
 def test_uptime_property():
@@ -146,12 +158,19 @@ def test_uptime_property():
     mixin = HealthCheckMixin(health_check_port=8005)
     time.sleep(0.5)
     assert mixin.uptime is not None
-    assert mixin.uptime > 0
+    assert mixin.uptime >= 0.5
 
 
 def test_health_endpoint_ready(health_service_ready):
     """Test the /health endpoint when the service is ready."""
     response = requests.get(f"http://127.0.0.1:{health_service_ready.health_check_port}/health")
+    assert response.status_code == 200
+    assert response.text == "OK"
+
+
+def test_health_endpoint(health_service):
+    """Test the /health endpoint when the service is ready."""
+    response = requests.get(f"http://127.0.0.1:{health_service.health_check_port}/health")
     assert response.status_code == 200
     assert response.text == "OK"
 
@@ -168,8 +187,17 @@ def test_status_endpoint_ready(health_service_ready):
     response = requests.get(f"http://127.0.0.1:{health_service_ready.health_check_port}/status")
     assert response.status_code == 200
     data = response.json()
-    assert data["status"] == "operational"
-    assert data["ready"] is True
+    assert data["status"] == "operational"  # defined by MyServiceReady class
+    assert "uptime_seconds" in data
+    assert data["uptime_seconds"] > 0
+
+
+def test_status_endpoint(health_service):
+    """Test the /status endpoint when the service is ready."""
+    response = requests.get(f"http://127.0.0.1:{health_service.health_check_port}/status")
+    assert response.status_code == 503  # Default
+    data = response.json()
+    assert data["status"] is None  # not defined in MyService class
     assert "uptime_seconds" in data
     assert data["uptime_seconds"] > 0
 
@@ -179,8 +207,7 @@ def test_status_endpoint_not_ready(health_service_not_ready):
     response = requests.get(f"http://127.0.0.1:{health_service_not_ready.health_check_port}/status")
     assert response.status_code == 503
     data = response.json()
-    assert data["status"] == "initializing"
-    assert data["ready"] is False
+    assert data["status"] is None
     assert "uptime_seconds" in data
     assert data["uptime_seconds"] > 0
 
