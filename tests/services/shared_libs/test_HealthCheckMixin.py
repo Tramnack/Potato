@@ -80,151 +80,152 @@ def health_service_not_ready():
     yield service
 
 
-@pytest.mark.parametrize("valid_port", [5000, 8000.0])
-def test_initialization_with_valid_port(valid_port):
-    """Test that the mixin initializes correctly with a valid port."""
-    mixin = HealthCheckMixin(health_check_port=valid_port)
-    assert mixin.health_check_port == valid_port
-    assert not mixin.ready
-    assert mixin.status is None
-    assert mixin.status_code == 503
+class TestInitialization:
+
+    @pytest.mark.parametrize("valid_port", [5000, 8000.0])
+    def test_initialization_with_valid_port(self, valid_port):
+        """Test that the mixin initializes correctly with a valid port."""
+        mixin = HealthCheckMixin(health_check_port=valid_port)
+        assert mixin.health_check_port == valid_port
+        assert not mixin.ready
+        assert mixin.status is None
+        assert mixin.status_code == 503
+
+    @pytest.mark.parametrize("invalid_port", ["invalid", -1, 0, 0.5])
+    def test_initialization_with_invalid_port_string(self, invalid_port):
+        """Test that initialization raises ValueError for an invalid string port."""
+        with pytest.raises(ValueError, match="health_check_port must be a valid port number"):
+            HealthCheckMixin(health_check_port=invalid_port)
 
 
-@pytest.mark.parametrize("invalid_port", ["invalid", -1, 0, 0.5])
-def test_initialization_with_invalid_port_string(invalid_port):
-    """Test that initialization raises ValueError for an invalid string port."""
-    with pytest.raises(ValueError, match="health_check_port must be a valid port number"):
-        HealthCheckMixin(health_check_port=invalid_port)
+class TestProperties:
 
+    def test_ready_property(self):
+        """Test the ready getter and setter."""
+        mixin = HealthCheckMixin(health_check_port=8003)
+        assert not mixin.ready
+        assert mixin.status is None
+        assert mixin.status_code == 503
 
-def test_ready_property():
-    """Test the ready getter and setter."""
-    mixin = HealthCheckMixin(health_check_port=8003)
-    assert not mixin.ready
-    assert mixin.status is None
-    assert mixin.status_code == 503
+        mixin.ready = True
+        assert mixin.ready
+        assert mixin.status is None
+        assert mixin.status_code == 503
 
-    mixin.ready = True
-    assert mixin.ready
-    assert mixin.status is None
-    assert mixin.status_code == 503
+    @pytest.mark.parametrize("status", ["operational", 200])
+    @pytest.mark.parametrize("code", [200, 200])
+    def test_status_property(self, status, code):
+        """Test the status getter and setter."""
+        mixin = HealthCheckMixin(health_check_port=8004)
+        assert not mixin.ready
+        assert mixin.status is None
+        assert mixin.status_code == 503
 
-
-@pytest.mark.parametrize("status", ["operational", 200])
-@pytest.mark.parametrize("code", [200, 200])
-def test_status_property(status, code):
-    """Test the status getter and setter."""
-    mixin = HealthCheckMixin(health_check_port=8004)
-    assert not mixin.ready
-    assert mixin.status is None
-    assert mixin.status_code == 503
-
-    mixin.status = status
-    mixin.status_code = code
-    assert mixin.status == str(status)
-    assert mixin.status_code == code
-
-
-def test_status_property_none():
-    """Test the status getter and setter."""
-    mixin = HealthCheckMixin(health_check_port=8004)
-    assert not mixin.ready
-    assert mixin.status is None
-    assert mixin.status_code == 503
-
-    mixin.status = "status"
-    mixin.status_code = 200
-
-    mixin.status = None
-    mixin.status_code = 204
-    assert mixin.status is None
-    assert mixin.status_code == 204
-
-
-@pytest.mark.parametrize("code", ["operational", 600, -200, None])
-def test_status_property_bad_status_code(code):
-    """Test the status getter and setter."""
-    mixin = HealthCheckMixin(health_check_port=8004)
-    assert not mixin.ready
-    assert mixin.status_code == 503
-
-    with pytest.raises(ValueError, match="status_code should be valid HTTP status code."):  # Regex
+        mixin.status = status
         mixin.status_code = code
-    assert mixin.status_code == 503
+        assert mixin.status == str(status)
+        assert mixin.status_code == code
 
+    def test_status_property_none(self):
+        """Test the status getter and setter."""
+        mixin = HealthCheckMixin(health_check_port=8004)
+        assert not mixin.ready
+        assert mixin.status is None
+        assert mixin.status_code == 503
 
-def test_uptime_property():
-    """Test the uptime getter."""
-    mixin = HealthCheckMixin(health_check_port=8005)
-    time.sleep(0.5)
-    assert mixin.uptime is not None
-    assert mixin.uptime >= 0.5
+        mixin.status = "status"
+        mixin.status_code = 200
 
+        mixin.status = None
+        mixin.status_code = 204
+        assert mixin.status is None
+        assert mixin.status_code == 204
 
-def test_health_endpoint_ready(health_service_ready):
-    """Test the /health endpoint when the service is ready."""
-    response = requests.get(f"http://127.0.0.1:{health_service_ready.health_check_port}/health")
-    assert response.status_code == 200
-    assert response.text == "OK"
+    @pytest.mark.parametrize("code", ["operational", 600, -200, None])
+    def test_status_property_bad_status_code(self, code):
+        """Test the status getter and setter."""
+        mixin = HealthCheckMixin(health_check_port=8004)
+        assert not mixin.ready
+        assert mixin.status_code == 503
 
+        with pytest.raises(ValueError, match="status_code should be valid HTTP status code."):  # Regex
+            mixin.status_code = code
+        assert mixin.status_code == 503
 
-def test_health_endpoint(health_service):
-    """Test the /health endpoint when the service is ready."""
-    response = requests.get(f"http://127.0.0.1:{health_service.health_check_port}/health")
-    assert response.status_code == 200
-    assert response.text == "OK"
-
-
-def test_health_endpoint_not_ready(health_service_not_ready):
-    """Test the /health endpoint when the service is not ready."""
-    response = requests.get(f"http://127.0.0.1:{health_service_not_ready.health_check_port}/health")
-    assert response.status_code == 503
-    assert response.text == "Starting..."
-
-
-def test_status_endpoint_ready(health_service_ready):
-    """Test the /status endpoint when the service is ready."""
-    response = requests.get(f"http://127.0.0.1:{health_service_ready.health_check_port}/status")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "operational"  # defined by MyServiceReady class
-    assert "uptime_seconds" in data
-    assert data["uptime_seconds"] > 0
-
-
-def test_status_endpoint(health_service):
-    """Test the /status endpoint when the service is ready."""
-    response = requests.get(f"http://127.0.0.1:{health_service.health_check_port}/status")
-    assert response.status_code == 503  # Default
-    data = response.json()
-    assert data["status"] is None  # not defined in MyService class
-    assert "uptime_seconds" in data
-    assert data["uptime_seconds"] > 0
-
-
-def test_status_endpoint_not_ready(health_service_not_ready):
-    """Test the /status endpoint when the service is not ready."""
-    response = requests.get(f"http://127.0.0.1:{health_service_not_ready.health_check_port}/status")
-    assert response.status_code == 503
-    data = response.json()
-    assert data["status"] is None
-    assert "uptime_seconds" in data
-    assert data["uptime_seconds"] > 0
-
-
-def test_health_server_starts_in_thread():
-    """
-    Test that the health server is started in a separate thread.
-    This is more of an integration-like unit test.
-    """
-    # Use a mock for Flask.run to check if it's called in a new thread
-    with patch('flask.Flask.run') as mock_run:
+    def test_uptime_property(self):
+        """Test the uptime getter."""
         mixin = HealthCheckMixin(health_check_port=8005)
-        # Give a brief moment for the thread to potentially start
-        time.sleep(0.1)
-        # Verify that Flask.run was called
-        mock_run.assert_called_once_with(
-            host="0.0.0.0", port=8005, debug=False, use_reloader=False
-        )
+        time.sleep(0.5)
         assert mixin.uptime is not None
-        assert mixin.uptime >= 0.1
+        assert mixin.uptime >= 0.5
+
+
+class TestHealthEndpoint:
+
+    def test_health_endpoint_ready(self, health_service_ready):
+        """Test the /health endpoint when the service is ready."""
+        response = requests.get(f"http://127.0.0.1:{health_service_ready.health_check_port}/health")
+        assert response.status_code == 200
+        assert response.text == "OK"
+
+    def test_health_endpoint(self, health_service):
+        """Test the /health endpoint when the service is ready."""
+        response = requests.get(f"http://127.0.0.1:{health_service.health_check_port}/health")
+        assert response.status_code == 200
+        assert response.text == "OK"
+
+    def test_health_endpoint_not_ready(self, health_service_not_ready):
+        """Test the /health endpoint when the service is not ready."""
+        response = requests.get(f"http://127.0.0.1:{health_service_not_ready.health_check_port}/health")
+        assert response.status_code == 503
+        assert response.text == "Starting..."
+
+
+class TestStatusEndpoint:
+
+    def test_status_endpoint_ready(self, health_service_ready):
+        """Test the /status endpoint when the service is ready."""
+        response = requests.get(f"http://127.0.0.1:{health_service_ready.health_check_port}/status")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "operational"  # defined by MyServiceReady class
+        assert "uptime_seconds" in data
+        assert data["uptime_seconds"] > 0
+
+    def test_status_endpoint(self, health_service):
+        """Test the /status endpoint when the service is ready."""
+        response = requests.get(f"http://127.0.0.1:{health_service.health_check_port}/status")
+        assert response.status_code == 503  # Default
+        data = response.json()
+        assert data["status"] is None  # not defined in MyService class
+        assert "uptime_seconds" in data
+        assert data["uptime_seconds"] > 0
+
+    def test_status_endpoint_not_ready(self, health_service_not_ready):
+        """Test the /status endpoint when the service is not ready."""
+        response = requests.get(f"http://127.0.0.1:{health_service_not_ready.health_check_port}/status")
+        assert response.status_code == 503
+        data = response.json()
+        assert data["status"] is None
+        assert "uptime_seconds" in data
+        assert data["uptime_seconds"] > 0
+
+
+class TestHealthServer:
+
+    def test_health_server_starts_in_thread(self):
+        """
+        Test that the health server is started in a separate thread.
+        This is more of an integration-like unit test.
+        """
+        # Use a mock for Flask.run to check if it's called in a new thread
+        with patch('flask.Flask.run') as mock_run:
+            mixin = HealthCheckMixin(health_check_port=8005)
+            # Give a brief moment for the thread to potentially start
+            time.sleep(0.1)
+            # Verify that Flask.run was called
+            mock_run.assert_called_once_with(
+                host="0.0.0.0", port=8005, debug=False, use_reloader=False
+            )
+            assert mixin.uptime is not None
+            assert mixin.uptime >= 0.1
