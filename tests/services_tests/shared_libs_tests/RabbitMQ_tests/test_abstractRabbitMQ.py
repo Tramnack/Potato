@@ -210,8 +210,6 @@ class TestReadyState:
 
         instance._channel.close()
 
-        print(instance._channel.close.side_effect)
-
         assert instance._channel is not None
         assert not instance._channel.is_open
 
