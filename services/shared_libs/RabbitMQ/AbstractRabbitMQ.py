@@ -76,17 +76,9 @@ class AbstractRabbitMQ(ABC):
         self.logger.error(error_msg + " Tried for {max_attempts * interval} seconds.")
         raise RabbitMQConnectionError(error_msg)
 
-    def close_channel(self):
-        if self._channel and self._channel.is_open:
-            self._channel.close()
-            self.logger.debug("Channel closed.")
-        else:
-            self.logger.debug("Channel already closed.")
-
     def close(self):
         """Closes the RabbitMQ connection."""
         self.logger.info("Closing RabbitMQ connection.")
-        self.close_channel()
         if self._connection and self._connection.is_open:
             self._connection.close()
             self.logger.debug("Connection closed.")
@@ -96,13 +88,6 @@ class AbstractRabbitMQ(ABC):
     def __del__(self):
         self.logger.debug("Deleting RabbitMQ instance.")
         self.close()
-
-    @property
-    def channel(self) -> BlockingChannel:
-        """Provides access to the channel, raising an error if not connected."""
-        if not self._channel or not self._channel.is_open:
-            raise RabbitMQConnectionError("Channel is not available. Not connected to RabbitMQ.")
-        return self._channel
 
     @abstractmethod
     def setup(self):
