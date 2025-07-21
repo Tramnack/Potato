@@ -17,7 +17,7 @@ class EchoBrain(AbstractBrain):
         print(f" [x] Brain received '{received_text}'")
 
         processed_text = f"Brain echoed: {received_text}"  # Simple echo logic
-        self.publish('brain_to_mouth', processed_text.encode())
+        self.publish(processed_text.encode(), 'brain_to_mouth')
         print(f" [x] Brain sent '{processed_text}' to Mouth")
 
         ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -26,6 +26,7 @@ class EchoBrain(AbstractBrain):
 def main():
 
     consumer = EchoBrain(RMQ_HOST, RMQ_PORT)
+    success = consumer.connect()
     print(' [*] Brain waiting for messages. To exit press CTRL+C')
     consumer.consume('ear_to_brain', auto_ack=False)
 

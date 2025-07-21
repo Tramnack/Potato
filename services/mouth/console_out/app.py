@@ -21,6 +21,7 @@ class ConsoleOutMouth(AbstractMouth):
 def main():
 
     consumer = ConsoleOutMouth(RMQ_HOST, RMQ_PORT)
+    success = consumer.connect()
     print(' [*] Mouth waiting for messages. To exit press CTRL+C')
     consumer.consume('brain_to_mouth', auto_ack=False)
 
