@@ -16,7 +16,7 @@ class HeartbeatEar(AbstractEar):
                 i += 1
                 user_input = f"Message Nr.{i}"
                 message = user_input.encode()
-                self.publish('ear_to_brain', message)
+                self.publish(message, 'ear_to_brain')
                 print(f" [x] Ear sent '{user_input}' to Brain")
                 time.sleep(1)
         except KeyboardInterrupt:
@@ -25,6 +25,7 @@ class HeartbeatEar(AbstractEar):
 
 def main():
     producer = HeartbeatEar(RMQ_HOST, RMQ_PORT)
+    success = producer.connect()
     producer.start_listening()
 
 
