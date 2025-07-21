@@ -76,7 +76,7 @@ class AbstractRabbitMQ(ABC):
         self.logger.error(error_msg + " Tried for {max_attempts * interval} seconds.")
         raise RabbitMQConnectionError(error_msg)
 
-    def close(self):
+    def disconnect(self):
         """Closes the RabbitMQ connection."""
         self.logger.info("Closing RabbitMQ connection.")
         if self._connection and self._connection.is_open:
@@ -87,7 +87,7 @@ class AbstractRabbitMQ(ABC):
 
     def __del__(self):
         self.logger.debug("Deleting RabbitMQ instance.")
-        self.close()
+        self.disconnect()
 
     @abstractmethod
     def setup(self):

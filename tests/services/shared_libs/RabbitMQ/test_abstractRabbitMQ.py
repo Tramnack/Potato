@@ -5,7 +5,7 @@ This test suite verifies the functionality of the AbstractRabbitMQ class, includ
 - Parameter validation during initialization.
 - Connection logic, including retry mechanisms on failure.
 - Graceful handling of resource cleanup for connections and channels,
-  both through explicit close methods and the class destructor.
+  both through explicit disconnect methods and the class destructor.
 """
 import os
 from unittest.mock import patch, MagicMock
@@ -196,11 +196,11 @@ class TestResourceCleanup:
         instance.connect()
         _, mock_connection, _ = mock_pika
 
-        instance.close()  # Manually close the connection
+        instance.disconnect()  # Manually disconnect the connection
         mock_connection.close.assert_called_once()
 
         del instance
-        mock_connection.close.assert_called_once()  # Ensure close wasn't called again
+        mock_connection.close.assert_called_once()  # Ensure disconnect wasn't called again
         assert "Connection already closed." in capsys.readouterr().out
 
 
