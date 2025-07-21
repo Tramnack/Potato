@@ -46,11 +46,11 @@ class AbstractRabbitMQ(ABC):
         self._connection: pika.BlockingConnection | None = None  # TCP connection
         self._channel: BlockingChannel | None = None  #
 
-    def connect(self):
+    def connect(self) -> bool:
         """
-        Connects to the RabbitMQ server and returns a channel.
+        Connects to the RabbitMQ server and returns success.
 
-        :return: The channel to the RabbitMQ server.
+        :return: True if connection was successful, False otherwise.
         """
 
         host, port = self._message_broker_host, self._message_broker_port
@@ -66,15 +66,15 @@ class AbstractRabbitMQ(ABC):
                 self._channel = self._connection.channel()
                 self.logger.info("Connected to RabbitMQ successfully")
                 self.setup()
-                return  # Exit if connection is successful
+                return True  # Exit if connection is successful
             except AMQPConnectionError:
                 self.logger.warning(
                     f"Failed to connect (attempt {attempt + 1}/{max_attempts}). Retrying in {interval}s...")
                 time.sleep(interval)
         # If we reach here, it means all attempts failed
-        error_msg = f"Failed to connect to RabbitMQ after {max_attempts} attempts."
-        self.logger.error(error_msg + " Tried for {max_attempts * interval} seconds.")
-        raise RabbitMQConnectionError(error_msg)
+        self.logger.error(
+            f"Failed to connect to RabbitMQ after {max_attempts} attempts. Tried for {max_attempts * interval} seconds.")
+        return False
 
     def disconnect(self):
         """Closes the RabbitMQ connection."""

@@ -98,8 +98,9 @@ class TestConnectionHandling:
         """Test a successful connection on the first attempt without any retries."""
         instance = rabbitmq_instance(**params)
         mock_blocking_connection, _, mock_channel = mock_pika
-        instance.connect()
+        success = instance.connect()
 
+        assert success
         mock_blocking_connection.assert_called_once()
         mock_sleep.assert_not_called()
         assert instance._channel == mock_channel
@@ -111,23 +112,24 @@ class TestConnectionHandling:
         mock_blocking_connection, mock_connection, mock_channel = mock_pika
         mock_blocking_connection.side_effect = [AMQPConnectionError, AMQPConnectionError, mock_connection]
 
-        instance.connect()
+        success = instance.connect()
 
+        assert success
         assert mock_blocking_connection.call_count == 3
         assert mock_sleep.call_count == 2
         mock_sleep.assert_called_with(0.01)
         assert instance._channel == mock_channel
 
     @pytest.mark.parametrize("params", [{"max_attempts": 3}])
-    def test_connect_raises_exception_after_max_retries(self, params, mock_pika, mock_sleep):
+    def test_connect_returns_false_after_max_retries(self, params, mock_pika, mock_sleep):
         """Test that connect() raises an exception after exhausting all retry attempts."""
         instance = rabbitmq_instance(**params)
         mock_blocking_connection, _, _ = mock_pika
         mock_blocking_connection.side_effect = AMQPConnectionError
 
-        with pytest.raises(Exception, match="Failed to connect to RabbitMQ after 3 attempts."):
-            instance.connect()
+        success = instance.connect()
 
+        assert not success
         assert mock_blocking_connection.call_count == 3
         assert mock_sleep.call_count == 3
 
