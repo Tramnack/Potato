@@ -8,12 +8,13 @@ This test suite verifies the functionality of the AbstractRabbitMQ class, includ
   both through explicit disconnect methods and the class destructor.
 """
 import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 from pika.exceptions import AMQPConnectionError
 
 from services.shared_libs.RabbitMQ.AbstractRabbitMQ import AbstractRabbitMQ
+from tests.services_tests.shared_libs_tests.RabbitMQ_tests.test_utils import mock_pika
 
 
 # Define a concrete implementation of the abstract class for testing purposes.
@@ -30,27 +31,6 @@ class ConcreteRabbitMQ(AbstractRabbitMQ):
 
 
 # --- Pytest Fixtures ---
-
-@pytest.fixture
-def mock_pika():
-    """A fixture to mock the pika.BlockingConnection and its components."""
-
-    def close_connection(connection):
-        setattr(connection, 'is_open', False)
-        setattr(connection.channel.return_value, 'is_open', False)
-
-    with patch('pika.BlockingConnection') as mock_blocking_connection:
-        mock_connection = MagicMock()
-        mock_connection.is_open = True
-        mock_connection.close.side_effect = lambda: close_connection(mock_connection)
-
-        mock_channel = MagicMock()
-        mock_channel.is_open = True
-
-        mock_connection.channel.return_value = mock_channel
-        mock_blocking_connection.return_value = mock_connection
-
-        yield mock_blocking_connection, mock_connection, mock_channel
 
 
 @pytest.fixture
