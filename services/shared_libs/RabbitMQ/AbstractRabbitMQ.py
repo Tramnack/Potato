@@ -9,6 +9,11 @@ from services.shared_libs.RabbitMQ.const import RMQ_HOST, RMQ_PORT
 from services.shared_libs.logging_config import setup_logging
 
 
+class RabbitMQConnectionError(Exception):
+    """Custom exception for when RabbitMQ connection fails."""
+    pass
+
+
 class AbstractRabbitMQ(ABC):
     def __init__(self,
                  host: str = RMQ_HOST,
@@ -38,11 +43,10 @@ class AbstractRabbitMQ(ABC):
         self._attempt_interval = attempt_interval
 
         self.logger = setup_logging(service_name=self.__class__.__name__)
+        self._connection: pika.BlockingConnection | None = None  # TCP connection
+        self._channel: BlockingChannel | None = None  #
 
-        self._channel = self._connect()
-        self.setup()
-
-    def _connect(self) -> BlockingChannel:
+    def connect(self):
         """
         Connects to the RabbitMQ server and returns a channel.
 
@@ -55,32 +59,52 @@ class AbstractRabbitMQ(ABC):
 
         # Establish connection with RabbitMQ server
         self.logger.info(f"Attempting to connect to RabbitMQ at {host}:{port}")
-        for attempt_nr in range(max_attempts):
+
+        for attempt in range(max_attempts):
             try:
-                connection = pika.BlockingConnection(pika.ConnectionParameters(host=host, port=port))
+                self._connection = pika.BlockingConnection(pika.ConnectionParameters(host=host, port=port))
+                self._channel = self._connection.channel()
                 self.logger.info("Connected to RabbitMQ successfully")
-                break  # Exit loop if connection is successful
+                self.setup()
+                return  # Exit if connection is successful
             except AMQPConnectionError:
-                self.logger.warning(f"Failed to connect to RabbitMQ. Retrying in {interval} seconds...")
+                self.logger.warning(
+                    f"Failed to connect (attempt {attempt + 1}/{max_attempts}). Retrying in {interval}s...")
                 time.sleep(interval)
+        # If we reach here, it means all attempts failed
+        error_msg = f"Failed to connect to RabbitMQ after {max_attempts} attempts."
+        self.logger.error(error_msg + " Tried for {max_attempts * interval} seconds.")
+        raise RabbitMQConnectionError(error_msg)
+
+    def close_channel(self):
+        if self._channel and self._channel.is_open:
+            self._channel.close()
+            self.logger.debug("Channel closed.")
         else:
-            self.logger.error(f"Failed to connect to RabbitMQ after {max_attempts} attempts."
-                              f"Tried for {max_attempts * interval} seconds.")
-            raise Exception(f"Failed to connect to RabbitMQ after {max_attempts} attempts.")
-        return connection.channel()
+            self.logger.debug("Channel already closed.")
+
+    def close(self):
+        """Closes the RabbitMQ connection."""
+        self.logger.info("Closing RabbitMQ connection.")
+        self.close_channel()
+        if self._connection and self._connection.is_open:
+            self._connection.close()
+            self.logger.debug("Connection closed.")
+        else:
+            self.logger.debug("Connection already closed.")
+
+    def __del__(self):
+        self.logger.debug("Deleting RabbitMQ instance.")
+        self.close()
 
     @property
     def channel(self) -> BlockingChannel:
+        """Provides access to the channel, raising an error if not connected."""
+        if not self._channel or not self._channel.is_open:
+            raise RabbitMQConnectionError("Channel is not available. Not connected to RabbitMQ.")
         return self._channel
-
-    def __del__(self):
-        if self._channel.is_closed:
-            self.logger.debug("Channel already closed.")
-        else:
-            self._channel.close()
-        self.logger.info("Channel closed.")
 
     @abstractmethod
     def setup(self):
-        """Subclasses should override this to declare queues, exchanges, etc."""
+        """Subclasses should override this to declare queues, exchanges, etc. Called in ``__init__``."""
         pass
