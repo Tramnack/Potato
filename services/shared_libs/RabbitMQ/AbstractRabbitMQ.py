@@ -85,6 +85,10 @@ class AbstractRabbitMQ(ABC):
         else:
             self.logger.debug("Connection already closed.")
 
+    def _ready(self) -> bool:
+        return (self._connection and self._connection.is_open and
+                self._channel and self._channel.is_open)
+
     def __del__(self):
         self.logger.debug("Deleting RabbitMQ instance.")
         self.disconnect()

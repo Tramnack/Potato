@@ -142,6 +142,82 @@ class TestConnectionHandling:
         assert instance.setup_called
 
 
+class TestReadyState:
+    """Tests focused on the is_ready() method."""
+
+    def test_is_ready_returns_true_when_connected(self, mock_pika):
+        """Test that is_ready() returns True when the instance is connected."""
+        instance = rabbitmq_instance()
+        instance.connect()
+
+        assert instance._channel is not None
+        assert instance._channel.is_open
+
+        assert instance._connection is not None
+        assert instance._connection.is_open
+
+        assert instance._ready()
+
+    def test_is_ready_returns_false_when_disconnected(self, mock_pika):
+        """Test that is_ready() returns True when the instance is disconnected."""
+        instance = rabbitmq_instance()
+        instance.connect()
+        instance.disconnect()
+
+        assert instance._channel is not None
+        assert not instance._channel.is_open
+
+        assert instance._connection is not None
+        assert not instance._connection.is_open
+
+        assert not instance._ready()
+
+    def test_is_ready_returns_false_without_connection(self, mock_pika):
+        """Test that is_ready() returns True when the instance was never connected."""
+        instance = rabbitmq_instance()
+
+        assert instance._channel is None
+        assert instance._connection is None
+
+        assert not instance._ready()
+
+    def test_is_ready_returns_false_without_channel(self, mock_pika):
+        """Test that is_ready() returns True when the instance lost its channel."""
+        instance = rabbitmq_instance()
+        instance.connect()
+
+        assert instance._channel is not None
+        assert instance._channel.is_open
+
+        assert instance._connection is not None
+        assert instance._connection.is_open
+
+        instance._channel = None
+        assert instance._channel is None
+
+        assert not instance._ready()
+
+    def test_is_ready_returns_false_with_closed_channel(self, mock_pika):
+        """Test that is_ready() returns True when the instance lost its channel."""
+        instance = rabbitmq_instance()
+        instance.connect()
+
+        assert instance._channel is not None
+        assert instance._channel.is_open
+
+        assert instance._connection is not None
+        assert instance._connection.is_open
+
+        instance._channel.close()
+
+        print(instance._channel.close.side_effect)
+
+        assert instance._channel is not None
+        assert not instance._channel.is_open
+
+        assert not instance._ready()
+
+
 class TestResourceCleanup:
     """
     Tests focused on the explicit and implicit (__del__) cleanup of resources.
