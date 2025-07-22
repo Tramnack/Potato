@@ -19,7 +19,7 @@ class AbstractRabbitMQ(ABC):
                  host: str = RMQ_HOST,
                  port: int = RMQ_PORT,
                  max_attempts: int = 5,
-                 attempt_interval: float = 5.0):
+                 attempt_interval: float = 5):
         """
         :param host: The hostname or IP address of the RabbitMQ server.
         :param port: The port number on which the RabbitMQ server is listening.
@@ -27,19 +27,26 @@ class AbstractRabbitMQ(ABC):
         :param attempt_interval: The interval in seconds between each attempt to connect to the RabbitMQ server.
         """
         if not isinstance(host, str):
-            raise ValueError("host must be a string.")
+            raise TypeError("host must be a string.")
         self._message_broker_host = host
 
-        if not isinstance(port, int) or port <= 0:
+        if not isinstance(port, int):
+            raise TypeError("port must be a positive integer.")
+        elif port <= 0:
             raise ValueError("port must be a positive integer.")
         self._message_broker_port = port
 
-        if not isinstance(max_attempts, int) or max_attempts <= 0:
+        if not isinstance(max_attempts, int):
+            raise TypeError("max_retries must be a positive integer.")
+        elif max_attempts <= 0:
             raise ValueError("max_retries must be a positive integer.")
         self._max_attempts = max_attempts
 
-        if not isinstance(attempt_interval, float | int) or attempt_interval <= 0:
-            raise ValueError(f"attempt_interval must be a positive float, was {attempt_interval}.")
+        if not isinstance(attempt_interval, float | int):
+            raise TypeError(f"attempt_interval must be a positive float.")
+        elif attempt_interval <= 0:
+            raise ValueError("attempt_interval must be a positive float.")
+
         self._attempt_interval = attempt_interval
 
         self.logger = setup_logging(service_name=self.__class__.__name__)
@@ -93,6 +100,10 @@ class AbstractRabbitMQ(ABC):
         self.disconnect()
 
     @abstractmethod
-    def setup(self):
-        """Subclasses should override this to declare queues, exchanges, etc. Called in ``__init__``."""
+    def setup(self) -> None:
+        """Subclasses should override this method to declare queues, exchanges, and bind queues to exchanges.
+        Example:
+            self._channel.queue_declare(queue='my_queue', durable=True)
+            self._channel.basic_qos(prefetch_count=1) # Set prefetch count for fair dispatch
+        """
         pass

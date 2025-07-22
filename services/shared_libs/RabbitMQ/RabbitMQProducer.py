@@ -27,10 +27,11 @@ class RabbitMQProducer(AbstractRabbitMQ, ABC):
         :param routing_key: The routing key used to route the message to the correct queue.
         :param body: The message to publish.
         :param durable: If True, the message will be persisted to disk. If False, the message will not be persisted.
-        :return: None
         """
         if not self._ready():
-            raise RuntimeError("RabbitMQProducer is not connected. Call connect() first.")
+            msg = "RabbitMQProducer is not connected."
+            self.logger.error(msg)
+            raise RuntimeError(msg + " Call connect() first.")
 
         try:
             self._channel.basic_publish(
@@ -46,4 +47,7 @@ class RabbitMQProducer(AbstractRabbitMQ, ABC):
             raise e
         except AMQPConnectionError as e:
             self.logger.error(f"AMQP Connection Error during publish: {e}")
+            raise e
+        except Exception as e:
+            self.logger.critical(f"An unexpected error occurred during publish: {e}")
             raise e
