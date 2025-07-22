@@ -66,6 +66,12 @@ class TestInitialization:
         assert instance._connection_parameters.retry_delay == 0.5
         assert not instance.setup_called  # setup() should only be called by connect()
 
+    def test_connect_calls_setup(self, mock_pika):
+        instance = ConcreteRabbitMQ(host="localhost", port=5672, connection_attempts=5, retry_delay=0.5)
+        assert not instance.setup_called
+        instance.connect()
+        assert instance.setup_called
+
     @pytest.mark.parametrize("invalid_host", ["", "   ", "\n", "\t"])
     def test_init_raises_value_error_for_invalid_host(self, invalid_host):
         """Test that __init__ raises a ValueError for an invalid host type."""
