@@ -99,7 +99,7 @@ class RabbitMQConsumer(AbstractRabbitMQ, ABC):
         Stop consuming messages from the current queue.
         This will cancel the active consumer if one exists.
         """
-        if self._consumer_tag and self._channel and self._channel.is_open:
+        if self._consumer_tag and self._ready():
             try:
                 un_acknowledged = self._channel.basic_cancel(self._consumer_tag)
                 self.logger.info(f"Stopped consuming messages from queue '{self._queue}'")
