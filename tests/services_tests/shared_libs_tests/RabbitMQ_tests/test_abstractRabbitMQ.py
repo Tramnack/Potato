@@ -58,11 +58,11 @@ class TestInitialization:
 
     def test_successful_initialization(self):
         """Test that the class initializes correctly with valid parameters."""
-        instance = ConcreteRabbitMQ(host="localhost", port=5672, max_attempts=5, attempt_interval=0.5)
+        instance = ConcreteRabbitMQ(host="localhost", port=5672, connection_attempts=5, retry_delay=0.5)
         assert instance._message_broker_host == "localhost"
         assert instance._message_broker_port == 5672
-        assert instance._max_attempts == 5
-        assert instance._attempt_interval == 0.5
+        assert instance._connection_attempts == 5
+        assert instance._retry_delay == 0.5
         assert not instance.setup_called  # setup() should only be called by connect()
 
     @pytest.mark.parametrize("invalid_host", [123, None, []])
@@ -78,22 +78,22 @@ class TestInitialization:
             ConcreteRabbitMQ(port=invalid_port)
 
     @pytest.mark.parametrize("invalid_attempts", ["abc", 0, -1, None])
-    def test_init_raises_error_for_invalid_max_attempts(self, invalid_attempts):
-        """Test that __init__ raises a ValueError for invalid max_attempts."""
+    def test_init_raises_error_for_invalid_connection_attempts(self, invalid_attempts):
+        """Test that __init__ raises a ValueError for invalid connection_attempts."""
         with pytest.raises(ValueError, match="max_retries must be a positive integer."):
-            ConcreteRabbitMQ(max_attempts=invalid_attempts)
+            ConcreteRabbitMQ(connection_attempts=invalid_attempts)
 
     @pytest.mark.parametrize("invalid_interval", ["abc", 0.0, -1.0, None])
-    def test_init_raises_error_for_invalid_attempt_interval(self, invalid_interval):
-        """Test that __init__ raises a ValueError for an invalid attempt_interval."""
-        with pytest.raises(ValueError, match="attempt_interval must be a positive float."):
-            ConcreteRabbitMQ(attempt_interval=invalid_interval)
+    def test_init_raises_error_for_invalid_retry_delay(self, invalid_interval):
+        """Test that __init__ raises a ValueError for an invalid retry_delay."""
+        with pytest.raises(ValueError, match="retry_delay must be a positive float."):
+            ConcreteRabbitMQ(retry_delay=invalid_interval)
 
 
 class TestConnectionHandling:
     """Tests focused on the connect() method and related logic."""
 
-    @pytest.mark.parametrize("params", [{"max_attempts": 3}])
+    @pytest.mark.parametrize("params", [{"connection_attempts": 3}])
     def test_connect_succeeds_on_first_try(self, params, mock_pika, mock_sleep):
         """Test a successful connection on the first attempt without any retries."""
         instance = rabbitmq_instance(**params)
@@ -105,7 +105,7 @@ class TestConnectionHandling:
         mock_sleep.assert_not_called()
         assert instance._channel == mock_channel
 
-    @pytest.mark.parametrize("params", [{"max_attempts": 3, "attempt_interval": 0.01}])
+    @pytest.mark.parametrize("params", [{"connection_attempts": 3, "retry_delay": 0.01}])
     def test_connect_succeeds_after_retries(self, params, mock_pika, mock_sleep):
         """Test that the connection succeeds after several failed attempts."""
         instance = rabbitmq_instance(**params)
@@ -120,7 +120,7 @@ class TestConnectionHandling:
         mock_sleep.assert_called_with(0.01)
         assert instance._channel == mock_channel
 
-    @pytest.mark.parametrize("params", [{"max_attempts": 3}])
+    @pytest.mark.parametrize("params", [{"connection_attempts": 3}])
     def test_connect_returns_false_after_max_retries(self, params, mock_pika, mock_sleep):
         """Test that connect() raises an exception after exhausting all retry attempts."""
         instance = rabbitmq_instance(**params)

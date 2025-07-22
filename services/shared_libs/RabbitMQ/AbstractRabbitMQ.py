@@ -18,13 +18,13 @@ class AbstractRabbitMQ(ABC):
     def __init__(self,
                  host: str = RMQ_HOST,
                  port: int = RMQ_PORT,
-                 max_attempts: int = 5,
-                 attempt_interval: float = 5):
+                 connection_attempts: int = 5,
+                 retry_delay: float = 5):
         """
         :param host: The hostname or IP address of the RabbitMQ server.
         :param port: The port number on which the RabbitMQ server is listening.
-        :param max_attempts: The maximum number of attempts to connect to the RabbitMQ server.
-        :param attempt_interval: The interval in seconds between each attempt to connect to the RabbitMQ server.
+        :param connection_attempts: The maximum number of attempts to connect to the RabbitMQ server.
+        :param retry_delay: The interval in seconds between each attempt to connect to the RabbitMQ server.
         """
         if not isinstance(host, str):
             raise TypeError("host must be a string.")
@@ -36,18 +36,18 @@ class AbstractRabbitMQ(ABC):
             raise ValueError("port must be a positive integer.")
         self._message_broker_port = port
 
-        if not isinstance(max_attempts, int):
+        if not isinstance(connection_attempts, int):
             raise TypeError("max_retries must be a positive integer.")
-        elif max_attempts <= 0:
+        elif connection_attempts <= 0:
             raise ValueError("max_retries must be a positive integer.")
-        self._max_attempts = max_attempts
+        self._connection_attempts = connection_attempts
 
-        if not isinstance(attempt_interval, float | int):
-            raise TypeError(f"attempt_interval must be a positive float.")
-        elif attempt_interval <= 0:
-            raise ValueError("attempt_interval must be a positive float.")
+        if not isinstance(retry_delay, float | int):
+            raise TypeError(f"retry_delay must be a positive float.")
+        elif retry_delay <= 0:
+            raise ValueError("retry_delay must be a positive float.")
 
-        self._attempt_interval = attempt_interval
+        self._retry_delay = retry_delay
 
         self.logger = setup_logging(service_name=self.__class__.__name__)
         self._connection: pika.BlockingConnection | None = None  # TCP connection
@@ -61,8 +61,8 @@ class AbstractRabbitMQ(ABC):
         """
 
         host, port = self._message_broker_host, self._message_broker_port
-        max_attempts = self._max_attempts
-        interval = self._attempt_interval
+        max_attempts = self._connection_attempts
+        interval = self._retry_delay
 
         # Establish connection with RabbitMQ server
         self.logger.info(f"Attempting to connect to RabbitMQ at {host}:{port}")

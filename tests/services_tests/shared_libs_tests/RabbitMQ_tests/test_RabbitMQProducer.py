@@ -56,13 +56,13 @@ def rabbitmq_instance_not_ready(mock_blocking_connection):
 
 class TestInitialization:
     @pytest.mark.parametrize("params",
-                             [{"host": "localhost", "port": 5672, "max_attempts": 1, "attempt_interval": 0.1}])
+                             [{"host": "localhost", "port": 5672, "connection_attempts": 1, "retry_delay": 0.1}])
     def test_rabbitmq_producer_init_valid_params(self, params, mock_pika):
         instance = ConcreteProducer(**params)
         assert instance._message_broker_host == "localhost"  #
         assert instance._message_broker_port == 5672  #
-        assert instance._max_attempts == 1  #
-        assert instance._attempt_interval == 0.1  #
+        assert instance._connection_attempts == 1  #
+        assert instance._retry_delay == 0.1  #
         assert not instance.setup_called  # setup method should only be called by connect
 
 

@@ -19,12 +19,12 @@ class RabbitMQConsumer(AbstractRabbitMQ, ABC):
                  queue_name: str,
                  host: str = RMQ_HOST,
                  port: int = RMQ_PORT,
-                 max_attempts: int = 5,
-                 attempt_interval: float = 5):
+                 connection_attempts: int = 5,
+                 retry_delay: float = 5):
 
         self._queue = None
-        super().__init__(host, port, max_attempts, attempt_interval)
         self.queue = queue_name
+        super().__init__(host, port, connection_attempts, retry_delay)
 
     @property
     def queue(self) -> str:
