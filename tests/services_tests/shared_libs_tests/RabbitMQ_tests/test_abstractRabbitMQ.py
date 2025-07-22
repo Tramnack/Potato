@@ -133,13 +133,12 @@ class TestConnectionHandling:
         assert mock_blocking_connection.call_count == 3
         assert mock_sleep.call_count == 3
 
-    @pytest.mark.parametrize("params", [{}])
-    def test_setup_method_is_called_on_connect(self, params, mock_pika):
-        """Test that the concrete setup() method is called after a successful connection."""
-        instance = rabbitmq_instance(**params)
+    def test_setup_method_is_not_called_on_connect(self, mock_pika):
+        """Test that the concrete setup() method is `not` called after a successful connection."""
+        instance = rabbitmq_instance()
         assert not instance.setup_called
         instance.connect()
-        assert instance.setup_called
+        assert not instance.setup_called
 
 
 class TestReadyState:

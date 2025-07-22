@@ -65,7 +65,6 @@ class AbstractRabbitMQ(ABC):
                 self._connection = pika.BlockingConnection(pika.ConnectionParameters(host=host, port=port))
                 self._channel = self._connection.channel()
                 self.logger.info("Connected to RabbitMQ successfully")
-                self.setup()
                 return True  # Exit if connection is successful
             except AMQPConnectionError:
                 self.logger.warning(

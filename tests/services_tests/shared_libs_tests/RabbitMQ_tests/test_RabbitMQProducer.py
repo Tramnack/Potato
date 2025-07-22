@@ -64,8 +64,6 @@ class TestInitialization:
         assert instance._max_attempts == 1  #
         assert instance._attempt_interval == 0.1  #
         assert not instance.setup_called  # setup method should only be called by connect
-        instance.connect()
-        assert instance.setup_called
 
 
 class TestBasicPublish:
