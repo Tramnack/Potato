@@ -59,11 +59,13 @@ class TestInitialization:
                              [{"host": "localhost", "port": 5672, "connection_attempts": 1, "retry_delay": 0.1}])
     def test_rabbitmq_producer_init_valid_params(self, params, mock_pika):
         instance = ConcreteProducer(**params)
-        assert instance._message_broker_host == "localhost"  #
-        assert instance._message_broker_port == 5672  #
-        assert instance._connection_attempts == 1  #
-        assert instance._retry_delay == 0.1  #
-        assert not instance.setup_called  # setup method should only be called by connect
+        assert instance._message_broker_host == "localhost"
+        assert instance._connection_parameters.host == "localhost"
+        assert instance._message_broker_port == 5672
+        assert instance._connection_parameters.port == 5672
+        assert instance._connection_parameters.connection_attempts == 1
+        assert instance._connection_parameters.retry_delay == 0.1
+        assert not instance.setup_called  # setup() should only be called by connect()
 
 
 class TestBasicPublish:
