@@ -5,14 +5,14 @@ from pika.channel import Channel
 from pika.exceptions import AMQPChannelError, AMQPConnectionError
 from pika.spec import Basic, BasicProperties
 
-from services.shared_libs.RabbitMQ import RMQ_HOST, RMQ_PORT
 from services.shared_libs.RabbitMQ.AbstractRabbitMQ import AbstractRabbitMQ
+from services.shared_libs.RabbitMQ.const import RMQ_HOST, RMQ_PORT
 
 
 class RabbitMQConsumer(AbstractRabbitMQ, ABC):
     """
     Abstract base class for RabbitMQ Consumers.
-    Subclasses must implement the `setup` and `callback` methods.
+    Subclasses must implement the `_setup` and `callback` methods.
     """
 
     def __init__(self,
@@ -22,8 +22,10 @@ class RabbitMQConsumer(AbstractRabbitMQ, ABC):
                  connection_attempts: int = 5,
                  retry_delay: float = 5):
 
-        self._queue = None
-        self.queue = queue_name
+        self._queue = queue_name
+        self._consuming = False
+        self._consumer_tag = None
+
         super().__init__(host, port, connection_attempts, retry_delay)
 
     @property
@@ -31,17 +33,21 @@ class RabbitMQConsumer(AbstractRabbitMQ, ABC):
         return self._queue
 
     @queue.setter
-    def queue(self, queue_name: str):
-        if not isinstance(queue_name, str):
+    def queue(self, value: str):
+        """
+        Set the queue name.
+        """
+        if not isinstance(value, str):
             raise TypeError("queue_name must be a string.")
-        elif not queue_name:
+        elif not value:
             raise ValueError("queue_name must not be empty.")
-        if queue_name != self._queue:
-            pass
-            # TODO
-        self._queue = queue_name
+        if value != self._queue and self._consumer_tag and self._consuming:
+            self.stop_consuming()
+        self._queue = value
+        self.logger.info(f"Queue name set to: {self._queue}")
 
-    def consume(self, auto_ack: bool = False, callback: Optional[callable] = None) -> None:
+    def consume(self, auto_ack: bool = False, callback: Optional[callable] = None,
+                restart_if_running: bool = True) -> None:
         """
         Starts consuming messages from the specified queue.
 
@@ -49,6 +55,7 @@ class RabbitMQConsumer(AbstractRabbitMQ, ABC):
                          If False, the callback method must manually acknowledge.
         :param callback: An optional callback function to handle incoming messages.
                          If provided, it overrides the default callback method.
+        :param restart_if_running: If True, the consumer will be restarted if it's already consuming messages.
         :raises RuntimeError: If the RabbitMQConsumer is not connected.
         :raises AMQPChannelError: If a channel-related error occurs during consumption.
         :raises AMQPConnectionError: If a connection-related error occurs during consumption.
@@ -58,17 +65,24 @@ class RabbitMQConsumer(AbstractRabbitMQ, ABC):
             self.logger.error(msg)
             raise RuntimeError(msg + " Call connect() first.")
 
+        if self._consuming and not restart_if_running:
+            self.logger.info("Consumer is already consuming messages from the queue.")
+            return
+        elif self._consuming and restart_if_running:
+            self.logger.info("Consumer is already consuming messages from the queue. Restarting...")
+            self.stop_consuming()
+
         try:
-            # Ensure queue is declared and QoS is set before consuming
-            # This is now handled in the setup() method which is called during connect()
-            # However, for robustness, we can ensure it here if consume is called directly
-            # without a prior setup call that declared this specific queue.
-            # For this implementation, we assume setup() handles all necessary declarations.
+            callback = callback or self._callback  # Use default callback if not provided
 
-            callback = callback or self.callback  # Use default callback if not provided
-
-            self._channel.basic_consume(queue=self._queue, on_message_callback=callback, auto_ack=auto_ack)
-            self.logger.info(f"Consuming messages from queue '{self._queue}'...")
+            # Start a new consumer
+            self._consumer_tag = self._channel.basic_consume(
+                queue=self._queue,
+                on_message_callback=callback,
+                auto_ack=auto_ack
+            )
+            self._consuming = True
+            self.logger.info(f"Consuming messages from queue '{self._queue}'")
             self._channel.start_consuming()
         except AMQPChannelError as e:
             self.logger.error(f"AMQP Channel Error during consume: {e}")
@@ -80,8 +94,35 @@ class RabbitMQConsumer(AbstractRabbitMQ, ABC):
             self.logger.critical(f"An unexpected error occurred during consume: {e}")
             raise e
 
+    def stop_consuming(self) -> None:
+        """
+        Stop consuming messages from the current queue.
+        This will cancel the active consumer if one exists.
+        """
+        if self._consumer_tag and self._channel and self._channel.is_open:
+            try:
+                un_acknowledged = self._channel.basic_cancel(self._consumer_tag)
+                self.logger.info(f"Stopped consuming messages from queue '{self._queue}'")
+                if un_acknowledged:
+                    self._handle_unacknowledged_messages(un_acknowledged)
+            except Exception as e:
+                self.logger.error(f"Error stopping consumer: {e}")
+                raise e
+            finally:
+                self._consuming = False
+                self._consumer_tag = None
+
+    def __enter__(self):
+        """Context manager entry point."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit point - ensures resources are cleaned up."""
+        self.stop_consuming()
+        self.disconnect()
+
     @abstractmethod
-    def callback(self, ch: Channel, method: Basic.Deliver, properties: BasicProperties, body: bytes) -> None:
+    def _callback(self, ch: Channel, method: Basic.Deliver, properties: BasicProperties, body: bytes) -> None:
         """
         Subclasses should override this method to handle incoming messages.
         This method is called by the Pika library when a message is received.
@@ -93,3 +134,13 @@ class RabbitMQConsumer(AbstractRabbitMQ, ABC):
         """
         pass
 
+    @abstractmethod
+    def _handle_unacknowledged_messages(self,
+                                        un_acknowledged: list[tuple[Channel, Basic.Deliver, BasicProperties, bytes]]
+                                        ) -> None:
+        """
+        Subclasses should override this method to handle unacknowledged messages after stopping consumption.
+
+        :param un_acknowledged: A list of unacknowledged messages.
+        """
+        pass
