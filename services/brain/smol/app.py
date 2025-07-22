@@ -10,10 +10,10 @@ from services.shared_libs.RabbitMQ import RMQ_HOST, RMQ_PORT
 
 
 class SmolBrain(AbstractBrain):
-    def setup(self):
+    def _setup(self):
         pass
 
-    def callback(self, ch: Channel, method: Basic.Deliver, properties: BasicProperties, body: bytes) -> None:
+    def _callback(self, ch: Channel, method: Basic.Deliver, properties: BasicProperties, body: bytes) -> None:
         received_text = body.decode()
         print(f" [x] Brain received '{received_text}'")
 
@@ -40,12 +40,16 @@ class SmolBrain(AbstractBrain):
         content = response.json()["choices"][0]["message"]["content"]
         return content
 
+    def _handle_unacknowledged_messages(self, un_acknowledged) -> None:
+        pass
+
 
 def main():
-    consumer = SmolBrain(RMQ_HOST, RMQ_PORT)
+    consumer = SmolBrain('brain_to_mouth', RMQ_HOST, RMQ_PORT)
     success = consumer.connect()
-    print(' [*] Brain waiting for messages. To exit press CTRL+C')
-    consumer.consume('ear_to_brain', auto_ack=False)
+    if success:
+        print(' [*] Brain waiting for messages. To exit press CTRL+C')
+        consumer.consume(auto_ack=False)
 
 
 if __name__ == '__main__':

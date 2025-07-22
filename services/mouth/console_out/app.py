@@ -9,21 +9,24 @@ from services.shared_libs.RabbitMQ import RMQ_HOST, RMQ_PORT
 
 
 class ConsoleOutMouth(AbstractMouth):
-    def setup(self):
+    def _setup(self):
         pass
 
-    def callback(self, ch: Channel, method: Basic.Deliver, properties: BasicProperties, body: bytes) -> None:
+    def _callback(self, ch: Channel, method: Basic.Deliver, properties: BasicProperties, body: bytes) -> None:
         received_text = body.decode()
         print(f" [x] Mouth received '{received_text}'")
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
+    def _handle_unacknowledged_messages(self, un_acknowledged) -> None:
+        pass
+
 
 def main():
-
-    consumer = ConsoleOutMouth(RMQ_HOST, RMQ_PORT)
+    consumer = ConsoleOutMouth("brain_to_mouth", RMQ_HOST, RMQ_PORT)
     success = consumer.connect()
-    print(' [*] Mouth waiting for messages. To exit press CTRL+C')
-    consumer.consume('brain_to_mouth', auto_ack=False)
+    if success:
+        print(' [*] Mouth waiting for messages. To exit press CTRL+C')
+        consumer.consume(auto_ack=False)
 
 
 if __name__ == '__main__':

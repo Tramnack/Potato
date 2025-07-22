@@ -6,7 +6,7 @@ from services.shared_libs.RabbitMQ import RMQ_HOST, RMQ_PORT
 
 class HeartbeatEar(AbstractEar):
 
-    def setup(self):
+    def _setup(self):
         pass
 
     def start_listening(self):
@@ -26,7 +26,8 @@ class HeartbeatEar(AbstractEar):
 def main():
     producer = HeartbeatEar(RMQ_HOST, RMQ_PORT)
     success = producer.connect()
-    producer.start_listening()
+    if success:
+        producer.start_listening()
 
 
 if __name__ == '__main__':

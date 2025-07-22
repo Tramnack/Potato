@@ -9,10 +9,10 @@ from services.shared_libs.RabbitMQ import RMQ_HOST, RMQ_PORT
 
 
 class EchoBrain(AbstractBrain):
-    def setup(self):
+    def _setup(self):
         pass
 
-    def callback(self, ch: Channel, method: Basic.Deliver, properties: BasicProperties, body: bytes) -> None:
+    def _callback(self, ch: Channel, method: Basic.Deliver, properties: BasicProperties, body: bytes) -> None:
         received_text = body.decode()
         print(f" [x] Brain received '{received_text}'")
 
@@ -22,13 +22,16 @@ class EchoBrain(AbstractBrain):
 
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
+    def _handle_unacknowledged_messages(self, un_acknowledged) -> None:
+        pass
+
 
 def main():
-
-    consumer = EchoBrain(RMQ_HOST, RMQ_PORT)
+    consumer = EchoBrain('ear_to_brain', RMQ_HOST, RMQ_PORT)
     success = consumer.connect()
-    print(' [*] Brain waiting for messages. To exit press CTRL+C')
-    consumer.consume('ear_to_brain', auto_ack=False)
+    if success:
+        print(' [*] Brain waiting for messages. To exit press CTRL+C')
+        consumer.consume(auto_ack=False)
 
 
 if __name__ == '__main__':
