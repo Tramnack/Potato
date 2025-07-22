@@ -15,7 +15,7 @@ class ConcreteProducer(RabbitMQProducer):
         self.setup_called = False
         super().__init__(*args, **kwargs)
 
-    def setup(self):
+    def _setup(self):
         """Concrete implementation for testing."""
         self.setup_called = True
 

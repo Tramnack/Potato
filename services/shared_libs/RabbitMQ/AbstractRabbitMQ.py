@@ -89,6 +89,7 @@ class AbstractRabbitMQ(ABC):
         try:
             self._connection = pika.BlockingConnection(self._connection_parameters)
             self._channel = self._connection.channel()
+            self._setup()
             self.logger.info("Connected to RabbitMQ successfully")
             return True  # Exit if connection is successful
         except AMQPConnectionError as e:
@@ -117,7 +118,7 @@ class AbstractRabbitMQ(ABC):
         self.disconnect()
 
     @abstractmethod
-    def setup(self) -> None:
+    def _setup(self) -> None:
         """Subclasses should override this method to declare queues, exchanges, bind queues to exchanges, handle dead letter queues, etc.
         Example:
             self._channel.queue_declare(queue='my_queue', durable=True)

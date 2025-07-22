@@ -25,7 +25,7 @@ class ConcreteRabbitMQ(AbstractRabbitMQ):
         self.setup_called = False
         super().__init__(*args, **kwargs)
 
-    def setup(self):
+    def _setup(self):
         """A concrete setup implementation that flags when it has been called."""
         self.setup_called = True
 
@@ -143,12 +143,12 @@ class TestConnectionHandling:
         assert mock_blocking_connection.call_count == 1
         mock_sleep.assert_not_called()
 
-    def test_setup_method_is_not_called_on_connect(self, mock_pika):
-        """Test that the concrete setup() method is `not` called after a successful connection."""
+    def test_setup_method_is_called_on_connect(self, mock_pika):
+        """Test that the concrete setup() method is called after a successful connection."""
         instance = rabbitmq_instance()
         assert not instance.setup_called
         instance.connect()
-        assert not instance.setup_called
+        assert instance.setup_called
 
 
 class TestReadyState:
