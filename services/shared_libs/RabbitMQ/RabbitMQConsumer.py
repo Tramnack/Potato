@@ -72,8 +72,11 @@ class RabbitMQConsumer(AbstractRabbitMQ, ABC):
             self.logger.info("Consumer is already consuming messages from the queue. Restarting...")
             self.stop_consuming()
 
+        if (not callable(callback) or not hasattr(callback, '__call__')) and callback is not None:
+            raise TypeError("callback must be a callable object or None.")
+        callback = callback or self._callback  # Use default callback if not provided
+
         try:
-            callback = callback or self._callback  # Use default callback if not provided
 
             # Start a new consumer
             self._consumer_tag = self._channel.basic_consume(
